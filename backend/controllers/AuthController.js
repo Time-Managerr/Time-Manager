@@ -65,18 +65,5 @@ export default {
     }
   },
 
-  //  PROFILE
-  async profile(req, res) {
-    try {
-      const user = await prisma.users.findUnique({
-        where: { idUser: req.user.id },
-        select: { idUser: true, firstname: true, lastname: true, email: true, phone: true },
-      });
 
-      if (!user) return res.status(404).json({ error: "Utilisateur introuvable." });
-      res.json(user);
-    } catch (error) {
-      res.status(500).json({ error: "Erreur serveur" });
-    }
-  },
 };
