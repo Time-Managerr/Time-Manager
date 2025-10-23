@@ -5,7 +5,7 @@ services:
     environment:
       - MARIADB_ROOT_PASSWORD=root
       - MARIADB_DATABASE=time_manager
-      - MARIADB_USER=app_user
+      - MARIADB_USER=root
       - MARIADB_PASSWORD=root
     ports:
       - "3306:3306"
@@ -16,11 +16,8 @@ services:
     build: ./backend
     image: time-manager-backend:local
     container_name: time-manager-backend
-    environment:
-      - DB_HOST=db
-      - DB_USER=root
-      - DB_PASSWORD=root
-      - DB_NAME=time_manager
+    env_file:
+      - ./backend/.env
     depends_on:
       - db
     expose:
