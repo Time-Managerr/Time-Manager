@@ -9,8 +9,8 @@ describe("Auth Profile - Token JWT", () => {
     const loginResponse = await request(app)
       .post("/auth/login")
       .send({
-        email: "eldjsalim@gmail.com", // 👉 à adapter selon un user existant
-        password: "Password1!",        // 👉 le bon mot de passe correspondant
+        email: "william@test.com", // 👉 à adapter selon un user existant
+        password: "Epitech1!",        // 👉 le bon mot de passe correspondant
       });
 
     // on s’assure que le token existe bien
