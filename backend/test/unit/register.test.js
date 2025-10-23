@@ -14,7 +14,7 @@ describe("Auth Register - full coverage", () => {
 
   it("should register successfully with valid data", async () => {
     const response = await request(app)
-      .post("/v1/auth/register")
+      .post("/auth/register")
       .send({
         firstname: "Test",
         lastname: "User",
@@ -31,7 +31,7 @@ describe("Auth Register - full coverage", () => {
 
   it("should fail if email is already used", async () => {
     const response = await request(app)
-      .post("/v1/auth/register")
+      .post("/auth/register")
       .send({
         firstname: "Dup",
         lastname: "User",
@@ -45,7 +45,7 @@ describe("Auth Register - full coverage", () => {
 
   it("should fail if password is too weak", async () => {
   const response = await request(app)
-    .post("/v1/auth/register")
+    .post("/auth/register")
     .send({
       firstname: "Weak",
       lastname: "User",

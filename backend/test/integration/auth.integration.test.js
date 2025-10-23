@@ -25,7 +25,7 @@ describe("Auth Integration - Full Flow", () => {
 
   // 1 Register success
   it("should register successfully with valid data", async () => {
-    const res = await request(app).post("/v1/auth/register").send(testUser);
+    const res = await request(app).post("/auth/register").send(testUser);
 
     expect(res.statusCode).toBe(201);
     expect(res.body).toHaveProperty("user");
@@ -34,7 +34,7 @@ describe("Auth Integration - Full Flow", () => {
 
   // 2️Register duplicate email
   it("should fail if email is already used", async () => {
-    const res = await request(app).post("/v1/auth/register").send(testUser);
+    const res = await request(app).post("/auth/register").send(testUser);
 
     expect(res.statusCode).toBe(409);
     expect(res.body).toHaveProperty("error", "Cet email est déjà utilisé.");
@@ -42,7 +42,7 @@ describe("Auth Integration - Full Flow", () => {
 
   //  Login success
   it("should login successfully with correct credentials", async () => {
-    const res = await request(app).post("/v1/auth/login").send({
+    const res = await request(app).post("/auth/login").send({
       email: testUser.email,
       password: testUser.password,
     });
@@ -57,7 +57,7 @@ describe("Auth Integration - Full Flow", () => {
 
   //  Login with wrong password
   it("should fail login with wrong password", async () => {
-    const res = await request(app).post("/v1/auth/login").send({
+    const res = await request(app).post("/auth/login").send({
       email: testUser.email,
       password: "WrongPassword!",
     });
@@ -69,7 +69,7 @@ describe("Auth Integration - Full Flow", () => {
   // Access profile with valid token
   it("should access profile with valid JWT", async () => {
     const res = await request(app)
-      .get("/v1/auth/profile")
+      .get("/auth/profile")
       .set("Authorization", `Bearer ${globalThis.token}`);
 
     expect(res.statusCode).toBe(200);
@@ -78,7 +78,7 @@ describe("Auth Integration - Full Flow", () => {
 
   // Access profile without token
   it("should reject profile access without token", async () => {
-    const res = await request(app).get("/v1/auth/profile");
+    const res = await request(app).get("/auth/profile");
 
     expect(res.statusCode).toBe(401); // ⚠️ Ajusté à 401 selon ton middleware
     expect(res.body).toHaveProperty("error", "Token manquant.");
@@ -87,7 +87,7 @@ describe("Auth Integration - Full Flow", () => {
   //  Access profile with invalid token
   it("should reject profile access with invalid token", async () => {
     const res = await request(app)
-      .get("/v1/auth/profile")
+      .get("/auth/profile")
       .set("Authorization", "Bearer invalid.token.test");
 
     expect(res.statusCode).toBe(403);

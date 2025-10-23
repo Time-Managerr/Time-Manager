@@ -31,9 +31,9 @@ describe("Users Integration - Full CRUD Flow (aligned with current backend)", ()
       where: { email: { in: [manager.email, newEmployee.email] } },
     });
 
-    await request(app).post("/v1/auth/register").send(manager);
+    await request(app).post("/auth/register").send(manager);
 
-    const loginRes = await request(app).post("/v1/auth/login").send({
+    const loginRes = await request(app).post("/auth/login").send({
       email: manager.email,
       password: manager.password,
     });
@@ -47,7 +47,7 @@ describe("Users Integration - Full CRUD Flow (aligned with current backend)", ()
 
   it("should allow creation of a new employee", async () => {
     const res = await request(app)
-      .post("/v1/users")
+      .post("/users")
       .send(newEmployee); // pas besoin de token
 
     expect(res.statusCode).toBe(201);
@@ -58,7 +58,7 @@ describe("Users Integration - Full CRUD Flow (aligned with current backend)", ()
 
   it("should return 403 for protected routes (token invalid/unauthorized)", async () => {
     const res = await request(app)
-      .get("/v1/users")
+      .get("/users")
       .set("Authorization", `Bearer ${managerToken}`);
 
     // Le middleware renvoie 403
@@ -68,7 +68,7 @@ describe("Users Integration - Full CRUD Flow (aligned with current backend)", ()
 
   it("should return 403 for get user by ID", async () => {
     const res = await request(app)
-      .get(`/v1/users/${createdUserId}`)
+      .get(`/users/${createdUserId}`)
       .set("Authorization", `Bearer ${managerToken}`);
 
     expect(res.statusCode).toBe(403);
@@ -77,7 +77,7 @@ describe("Users Integration - Full CRUD Flow (aligned with current backend)", ()
 
   it("should return 403 for update user", async () => {
     const res = await request(app)
-      .put(`/v1/users/${createdUserId}`)
+      .put(`/users/${createdUserId}`)
       .set("Authorization", `Bearer ${managerToken}`)
       .send({ firstname: "UpdatedEmployee" });
 
@@ -87,7 +87,7 @@ describe("Users Integration - Full CRUD Flow (aligned with current backend)", ()
 
   it("should return 403 for delete user", async () => {
     const res = await request(app)
-      .delete(`/v1/users/${createdUserId}`)
+      .delete(`/users/${createdUserId}`)
       .set("Authorization", `Bearer ${managerToken}`);
 
     expect(res.statusCode).toBe(403);
@@ -95,7 +95,7 @@ describe("Users Integration - Full CRUD Flow (aligned with current backend)", ()
   });
 
   it("should reject access without token", async () => {
-    const res = await request(app).get("/v1/users");
+    const res = await request(app).get("/users");
     expect(res.statusCode).toBe(401);
     expect(res.body).toHaveProperty("error", "Token manquant.");
   });

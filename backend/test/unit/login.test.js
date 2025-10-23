@@ -5,7 +5,7 @@ describe("Auth Login - full coverage", () => {
 
   it("should login successfully with valid credentials", async () => {
     const response = await request(app)
-      .post("/v1/auth/login")
+      .post("/auth/login")
       .send({
         email: "eldjsalim@gmail.com",
         password: "Password1!",
@@ -18,7 +18,7 @@ describe("Auth Login - full coverage", () => {
 
   it("should fail to login with wrong password", async () => {
     const response = await request(app)
-      .post("/v1/auth/login")
+      .post("/auth/login")
       .send({
         email: "eldjsalim@gmail.com",
         password: "WrongPassword!",
@@ -30,7 +30,7 @@ describe("Auth Login - full coverage", () => {
 
   it("should fail to login with non-existent email", async () => {
     const response = await request(app)
-      .post("/v1/auth/login")
+      .post("/auth/login")
       .send({
         email: "userinexistant@example.com",
         password: "Password1!",
@@ -43,7 +43,7 @@ describe("Auth Login - full coverage", () => {
 
   it("should fail if email is missing", async () => {
     const response = await request(app)
-      .post("/v1/auth/login")
+      .post("/auth/login")
       .send({
         password: "Password1!",
       });
@@ -54,7 +54,7 @@ describe("Auth Login - full coverage", () => {
 
   it("should fail if password is missing", async () => {
     const response = await request(app)
-      .post("/v1/auth/login")
+      .post("/auth/login")
       .send({
         email: "eldjsalim@gmail.com",
       });
@@ -65,7 +65,7 @@ describe("Auth Login - full coverage", () => {
 
   it("should fail if email format is invalid", async () => {
     const response = await request(app)
-      .post("/v1/auth/login")
+      .post("/auth/login")
       .send({
         email: "not-an-email",
         password: "Password1!",
