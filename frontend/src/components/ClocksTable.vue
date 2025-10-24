@@ -1,19 +1,24 @@
-<script>
+<script setup>
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
 const clocks = ref([]);
+const getDate = (dateString) => dateString.split("T")[0];
+const getHeure = (dateString) => dateString.slice(11, 19);
 
 const fetchClocksByIdUser = async (userId) => {
-    const response = await fetch(`http://127.0.0.1:3000/clocks/user/${userId}`);
-    const data = await response.json();
-    clocks.value = data;
-    console.log("Clocks for user", userId, "fetched:", data);
+  const response = await fetch(`http://127.0.0.1:3000/clocks/user/${userId}`);
+  const data = await response.json();
+  clocks.value = data;
+  console.log("Clocks for user", userId, "fetched:", data);
+};
+
+const redirection = (id) => {
+  router.push(`/clock/${id}`);
 };
 
 onMounted(() => {
-  // Exemple : si tu stockes l'user dans le localStorage
   const user = JSON.parse(localStorage.getItem("user"));
   if (user && user.id) {
     fetchClocksByIdUser(user.id);
@@ -22,6 +27,7 @@ onMounted(() => {
   }
 });
 </script>
+
 <template>
     <div class="d-flex flex-column justify-content-between mx-auto my-4 shadow card p-3">
         <h4 class="fw-semibold mt-2 mb-4">My previous clocks</h4>
@@ -45,10 +51,10 @@ onMounted(() => {
             </thead>
             <tbody>
                 <tr v-for="clock in clocks" :key="clock.id" @click="redirection(clock.id)">
-                    <td scope="row">{{ clock.createdAt }}</td>
-                    <td class="text-danger">{{ clock.clockin }}</td>
-                    <td class="text-success">{{clock.clockout}}</td>
-                    <td class="text-success">{{clock.hoursWorked}}</td>
+                    <td scope="row">{{ getDate(clock.createdAt) }}</td>
+                    <td class="text-success">{{ getHeure(clock.clockIn) }}</td>
+                    <td class="text-danger">{{ getHeure(clock.clockOut) }}</td>
+                    <td >{{clock.hoursWorked}}</td>
                 </tr>
             </tbody>
         </table>
