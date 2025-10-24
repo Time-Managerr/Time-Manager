@@ -25,8 +25,8 @@
             </div>
           </div>
           <div class="col-md-9">
-            <h5 class="fw-semibold mb-1">{{ firstName }} {{ lastName }}</h5>
-            <p class="text-muted mb-2">{{ email }}</p>
+            <h5 class="fw-semibold mb-1">{{ user.firstname }} {{ user.lastname }}</h5>
+            <p class="text-muted mb-2">{{ user.email }}</p>
             <span class="badge bg-light text-dark border">Member since 2023</span>
           </div>
         </div>
@@ -39,19 +39,19 @@
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label">First name</label>
-              <input v-model="firstName" type="text" class="form-control" />
+              <input v-model="user.firstname" type="text" class="form-control" />
             </div>
             <div class="col-md-6">
               <label class="form-label">Last name</label>
-              <input v-model="lastName" type="text" class="form-control" />
+              <input v-model="user.lastname" type="text" class="form-control" />
             </div>
             <div class="col-md-6">
               <label class="form-label">Email</label>
-              <input v-model="email" type="email" class="form-control" />
+              <input v-model="user.email" type="email" class="form-control" />
             </div>
             <div class="col-md-6">
               <label class="form-label">Phone number</label>
-              <input v-model="phone" type="tel" class="form-control" />
+              <input v-model="user.phone" type="tel" class="form-control" />
             </div>
           </div>
         </form>
@@ -84,22 +84,36 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
-const firstName = ref('John')
-const lastName = ref('Doe')
-const email = ref('john.doe@example.com')
-const phone = ref('+1 (555) 123-4567')
-const avatar = '/vite.svg'
+const user = ref({
+  firstname: '',
+  lastname: '',
+  email: '',
+  phone: ''
+})
+const avatar = ref('/vite.svg')
+
+onMounted(() => {
+  const storedUser = JSON.parse(localStorage.getItem("user"))
+  if (storedUser) {
+    user.value = storedUser
+    if (storedUser.avatar) avatar.value = storedUser.avatar
+  } else {
+    console.warn("Aucun utilisateur trouvé dans le localStorage")
+  }
+})
 
 function onEditAvatar() {
   alert('Change avatar - not implemented yet')
 }
 
 function onSave() {
+  localStorage.setItem("user", JSON.stringify(user.value))
   alert('Saved successfully! (demo)')
 }
 </script>
+
 
 <style scoped>
 /* General Layout */
