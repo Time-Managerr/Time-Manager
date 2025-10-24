@@ -53,7 +53,7 @@ onMounted(() => {
                 <tr v-for="clock in clocks" :key="clock.id" @click="redirection(clock.id)">
                     <td scope="row">{{ getDate(clock.createdAt) }}</td>
                     <td class="text-success">{{ getHeure(clock.clockIn) }}</td>
-                    <td class="text-danger">{{ getHeure(clock.clockOut) }}</td>
+                    <td class="text-danger">{{ getHeure(clock.clockOut) || 'Non pointé' }}</td>
                     <td >{{clock.hoursWorked}}</td>
                 </tr>
             </tbody>

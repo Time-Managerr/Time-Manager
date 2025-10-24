@@ -21,7 +21,7 @@
             <h5>Today's Work Time</h5>
             <div class="d-flex flex-row-reverse justify-content-evenly w-100 gap-3 align-items-center">
               <div class="">
-                <h2 class="display-5 fw-bold text-center">01:18:55</h2>
+                <h2 id="chrono" class="display-5 fw-bold text-center">00:00:00</h2>
               </div>
               <div class="d-flex justify-content-between bg-primary-subtle rounded-4 p-3">
                 <svg style="height: 50px;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M20 10V7C20 5.89543 19.1046 5 18 5H6C4.89543 5 4 5.89543 4 7V10M20 10V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V10M20 10H4M8 3V7M16 3C16 3 16 5.4379 16 7" stroke="#1b93b1" stroke-width="2" stroke-linecap="round"></path> <rect x="6" y="12" width="5" height="5" rx="1" fill="#1b93b1"></rect> </g></svg>
@@ -67,7 +67,7 @@
               </svg>
             </div>
             <p class="my-3 text-center fst-italic">Clock in before starting your work.</p>
-            <a class="btn btn-success" href="#" role="button">Start</a>
+            <button class="btn btn-success" @click="clockIn">Start</button>
           </div>
         </div>
         <div class="w-50 h-auto">
@@ -77,7 +77,7 @@
               <svg viewBox="0 0 1024 1024" class="icon" version="1.1" xmlns="http://www.w3.org/2000/svg" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M313.5 906.3c-16 0-35.7-11.4-43.7-25.2L71.4 537.4c-8-13.9-8-36.6 0-50.5l198.4-343.6c8-13.9 27.7-25.2 43.7-25.2h396.8c16 0 35.7 11.4 43.7 25.2l198.4 343.6c8 13.9 8 36.6 0 50.5L754 881c-8 13.9-27.7 25.2-43.7 25.2H313.5z" fill="#FF5959"></path><path d="M329.1 828.7h365.5l182.8-316.6-182.8-316.5H329.1L146.4 512.2l182.7 316.5z m374 29.2H320.7c-5.2 0-10-2.8-12.6-7.3L116.9 519.5c-2.6-4.5-2.6-10.1 0-14.6l191.2-331.1c2.6-4.5 7.4-7.3 12.6-7.3h382.4c5.2 0 10 2.8 12.6 7.3l191.2 331.1c2.6 4.5 2.6 10.1 0 14.6L715.7 850.6c-2.6 4.5-7.4 7.3-12.6 7.3z" fill="#FFFFFF"></path><path d="M264.8 558.4c-2.7-1.9-4.5-5.1-4.5-8.9 0-6.1 4.9-10.8 11-10.8 3.2 0 5.3 0.9 6.8 2.1 11 8.7 22.7 13.6 37.1 13.6s23.5-6.8 23.5-16.7v-0.4c0-9.5-5.3-14.6-29.9-20.3-28.2-6.8-44.1-15.2-44.1-39.6v-0.4c0-22.7 18.9-38.5 45.3-38.5 16.7 0 30.1 4.4 42.1 12.3 2.7 1.5 5.1 4.7 5.1 9.3 0 6.1-4.9 10.8-11 10.8-2.3 0-4.2-0.6-6.1-1.7-10.2-6.6-20.1-10-30.5-10-13.6 0-21.6 7-21.6 15.7v0.4c0 10.2 6.1 14.8 31.6 20.8 28 6.8 42.4 16.9 42.4 38.8v0.4c0 24.8-19.5 39.6-47.4 39.6-18 0.2-35.1-5.5-49.8-16.5zM419.2 462.2H387c-6.1 0-10.8-4.9-10.8-10.8s4.7-10.8 10.8-10.8h88c5.9 0 10.6 4.9 10.6 10.8s-4.7 10.8-10.6 10.8h-32.4v100.4c0 6.4-5.3 11.6-11.7 11.6-6.4 0-11.7-5.1-11.7-11.6V462.2zM610.5 507.3v-0.4c0-25.8-18.8-47.2-45.1-47.2s-44.7 21-44.7 46.8v0.4c0 25.8 18.8 47 45.1 47s44.7-20.8 44.7-46.6z m-114.2 0v-0.4c0-37.3 28.8-68.6 69.5-68.6s69.1 30.9 69.1 68.2v0.4c0 37.3-28.8 68.6-69.5 68.6s-69.1-30.9-69.1-68.2zM713.5 509.6c17.6 0 28.6-9.9 28.6-23.7v-0.4c0-15.5-11.2-23.7-28.6-23.7h-27.1v47.7l27.1 0.1z m-50.4-57.2c0-6.6 5.1-11.7 11.7-11.7h40.5c31.1 0 50.4 17.6 50.4 44.3v0.4c0 29.7-23.9 45.3-53 45.3h-26.3v32c0 6.4-5.1 11.6-11.6 11.6-6.6 0-11.7-5.1-11.7-11.6V452.4z" fill="#FFFFFF"></path></g></svg>
             </div>
             <p class="my-3 text-center fst-italic">Recent activities or tasks.</p>
-            <a class="btn btn-success bg-danger" href="#" role="button">Clock out</a>
+            <button class="btn btn-danger" @click="clockOut">Clock out</button>
           </div>
         </div>
       </div>
@@ -88,7 +88,101 @@
 
 <script setup>
 import ClocksTable from '../components/ClocksTable.vue';
+import confetti from 'canvas-confetti';
+import { ref, onMounted } from 'vue';
+import clockInstance from '../services/clockService.js';
+
+const user = ref(null);
+const avatar = ref(null);
+
+let clock = ref({
+  userId: "", // ID de l'utilisateur
+  clockIn: "",
+  clockOut: "",
+});
+
+let success = ref(null);
+
+onMounted(() => {
+  const storedUser = JSON.parse(localStorage.getItem("user"));
+  
+  if (storedUser) {
+    user.value = storedUser;
+    clock.value.userId = storedUser.id || storedUser.userId; // ici on récupère l'id
+    if (storedUser.avatar) avatar.value = storedUser.avatar;
+    console.log("Utilisateur chargé :", storedUser);
+  } else {
+    console.warn("Aucun utilisateur trouvé dans le localStorage");
+  }
+});
+
+async function clockIn() {
+  console.clear();
+  success.value = null;
+
+  try {
+    if (!clock.value.userId) {
+      throw new Error("Impossible de pointer : ID utilisateur manquant !");
+    }
+
+    // Ajout automatique de la date actuelle
+    const now = new Date().toISOString();
+    clock.value.clockIn = now;
+
+    const data = await clockInstance.clockIn(
+      clock.value.userId,
+      clock.value.clockIn
+    );
+
+    success.value = "Vous avez pointé !";
+    showConfetti();
+    console.log("Pointage créé :", data);
+  } catch (error) {
+    console.error("Erreur lors du pointage :", error);
+    success.value = "Erreur lors du pointage.";
+  }
+}
+
+async function clockOut() {
+  console.clear();
+  success.value = null;
+
+  try {
+    if (!clock.value.userId) {
+      throw new Error("Impossible de pointer : ID utilisateur manquant !");
+    }
+
+    // Récupérer le dernier clock actif de l'utilisateur
+    const lastClock = await clockInstance.clockOut(clock.value.userId);
+
+    if (!lastClock || !lastClock.idClock) {
+      throw new Error("Aucun pointage actif trouvé pour cet utilisateur.");
+    }
+
+    const now = new Date().toISOString();
+    clock.value.clockOut = now;
+
+    // Mettre à jour le pointage (clockOut)
+    const data = await clockInstance.clockOut(lastClock.idClock, clock.value.clockOut);
+
+    success.value = "Vous avez terminé votre pointage !";
+    showConfetti();
+    console.log("Pointage mis à jour :", data);
+  } catch (error) {
+    console.error("Erreur lors du clock-out :", error);
+    success.value = "Erreur lors du pointage de sortie.";
+  }
+}
+
+function showConfetti() {
+  confetti({
+    particleCount: 150,
+    spread: 180,
+    origin: { y: 0.6 },
+  });
+}
 </script>
+
 
 <style scoped>
 .home {
