@@ -35,7 +35,7 @@ const fetchClocksByUser = async (userId) => {
 // calculer le début de la semaine (lundi) à 00:00:00
 const startOfWeek = (date) => {
   const d = new Date(date);
-  const day = d.getDay(); // 0 (dimanche) .. 6 (samedi)
+  const day = d.getDay(); 
   // décalage pour obtenir le lundi
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   const monday = new Date(d.setDate(diff));
@@ -43,7 +43,7 @@ const startOfWeek = (date) => {
   return monday;
 };
 
-// format durée ms -> HH:MM:SS
+// format durée -> HH:MM:SS
 const formatDuration = (ms) => {
   if (!ms || ms <= 0) return '00:00:00';
   const totalSeconds = Math.floor(ms / 1000);
