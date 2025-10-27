@@ -16,19 +16,7 @@
             </div>
           </div>
         </div>
-        <div class="w-66">
-          <div class="d-flex flex-column gap-2 align-items-center shadow card p-3">
-            <h5>Today's Work Time</h5>
-            <div class="d-flex flex-row-reverse justify-content-evenly w-100 gap-3 align-items-center">
-              <div class="">
-                <h2 id="chrono" class="display-5 fw-bold text-center">00:00:00</h2>
-              </div>
-              <div class="d-flex justify-content-between bg-primary-subtle rounded-4 p-3">
-                <svg style="height: 50px;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M20 10V7C20 5.89543 19.1046 5 18 5H6C4.89543 5 4 5.89543 4 7V10M20 10V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V10M20 10H4M8 3V7M16 3C16 3 16 5.4379 16 7" stroke="#1b93b1" stroke-width="2" stroke-linecap="round"></path> <rect x="6" y="12" width="5" height="5" rx="1" fill="#1b93b1"></rect> </g></svg>
-              </div>
-            </div>
-          </div>
-        </div>
+        <Chrono :startTime="currentClock?.clockIn"/>
       </div>
       <div class="d-flex gap-lg-5 mx-auto mt-4">
         <div class="w-50 h-auto">
@@ -88,12 +76,21 @@
 
 <script setup>
 import ClocksTable from '../components/ClocksTable.vue';
+import Chrono from '../components/Chrono.vue';
 import confetti from 'canvas-confetti';
 import { ref, onMounted } from 'vue';
 import clockInstance from '../services/clockService.js';
 
 const user = ref(null);
 const avatar = ref(null);
+const currentClock = ref(null);
+let success = ref(null);
+
+const fetchCurrentClock = async () => {
+  if (!clock.value.userId) return;
+  const clocks = await clockInstance.getByUserId(clock.value.userId);
+  currentClock.value = clocks.find(c => !c.clockOut) || null;
+};
 
 let clock = ref({
   userId: "", // ID de l'utilisateur
@@ -101,18 +98,13 @@ let clock = ref({
   clockOut: "",
 });
 
-let success = ref(null);
-
 onMounted(() => {
   const storedUser = JSON.parse(localStorage.getItem("user"));
-  
   if (storedUser) {
     user.value = storedUser;
-    clock.value.userId = storedUser.id || storedUser.userId; // ici on récupère l'id
+    clock.value.userId = storedUser.id || storedUser.userId;
     if (storedUser.avatar) avatar.value = storedUser.avatar;
-    console.log("Utilisateur chargé :", storedUser);
-  } else {
-    console.warn("Aucun utilisateur trouvé dans le localStorage");
+    fetchCurrentClock(); // récupère le dernier pointage actif
   }
 });
 
@@ -121,18 +113,12 @@ async function clockIn() {
   success.value = null;
 
   try {
-    if (!clock.value.userId) {
-      throw new Error("Impossible de pointer : ID utilisateur manquant !");
-    }
-
-    // Ajout automatique de la date actuelle
+    if (!clock.value.userId) throw new Error("ID utilisateur manquant !");
     const now = new Date().toISOString();
     clock.value.clockIn = now;
 
-    const data = await clockInstance.clockIn(
-      clock.value.userId,
-      clock.value.clockIn
-    );
+    const data = await clockInstance.clockIn(clock.value.userId, clock.value.clockIn);
+    currentClock.value = data; // ← nouveau pointage actif
 
     success.value = "Vous avez pointé !";
     showConfetti();
@@ -143,35 +129,18 @@ async function clockIn() {
   }
 }
 
+
 async function clockOut() {
   console.clear();
   success.value = null;
 
   try {
-    if (!clock.value.userId) {
-      throw new Error("Impossible de pointer : ID utilisateur manquant !");
-    }
-
-    //  Récupérer tous les clocks de l'utilisateur
-    const clocks = await clockInstance.getByUserId(clock.value.userId);
-
-    if (!clocks || clocks.length === 0) {
-      throw new Error("Aucun pointage trouvé pour cet utilisateur !");
-    }
-
-    // Identifier le dernier pointage
-    const lastClock = clocks.sort((a, b) => b.idClock - a.idClock)[0];
-
-    if (!lastClock) {
-      throw new Error("Aucun pointage actif trouvé pour cet utilisateur.");
-    }
-
-    //  Préparer la date de sortie
+    if (!currentClock.value) throw new Error("Aucun pointage actif !");
     const now = new Date().toISOString();
     clock.value.clockOut = now;
 
-    //  Mettre à jour ce dernier pointage
-    const data = await clockInstance.clockOut(lastClock.idClock, clock.value.clockOut);
+    const data = await clockInstance.clockOut(currentClock.value.idClock, clock.value.clockOut);
+    currentClock.value = null; // plus de chrono actif
 
     success.value = "Vous avez terminé votre pointage !";
     showConfetti();
@@ -181,6 +150,7 @@ async function clockOut() {
     success.value = "Erreur lors du pointage de sortie.";
   }
 }
+
 
 function showConfetti() {
   confetti({

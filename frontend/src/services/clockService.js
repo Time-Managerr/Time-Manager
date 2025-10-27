@@ -1,6 +1,5 @@
 // src/services/clock.js
 import { api } from "./api.js";
-
 class Clock {
   // Clock-in : créer un nouveau pointage
   async clockIn(userId, clockIn) {
