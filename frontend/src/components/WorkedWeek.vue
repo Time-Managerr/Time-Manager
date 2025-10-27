@@ -15,8 +15,75 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 
-const workedweek = ref("00:00:00");
+// données
+const clocks = ref([]);
+
+// récupère les clocks pour l'utilisateur courant
+const fetchClocksByUser = async (userId) => {
+  try {
+    const response = await fetch(`http://127.0.0.1:3000/clocks/user/${userId}`);
+    const data = await response.json();
+    clocks.value = data || [];
+  } catch (err) {
+    console.error('Erreur fetch clocks:', err);
+    clocks.value = [];
+  }
+};
+
+// calculer le début de la semaine (lundi) à 00:00:00
+const startOfWeek = (date) => {
+  const d = new Date(date);
+  const day = d.getDay(); // 0 (dimanche) .. 6 (samedi)
+  // décalage pour obtenir le lundi
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(d.setDate(diff));
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+};
+
+// format durée ms -> HH:MM:SS
+const formatDuration = (ms) => {
+  if (!ms || ms <= 0) return '00:00:00';
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+  const minutes = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+  const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+  return `${hours}:${minutes}:${seconds}`;
+};
+
+// computed : total d'heures travaillées pour la semaine courante
+const workedweek = computed(() => {
+  if (!clocks.value || clocks.value.length === 0) return '00:00:00';
+
+  const now = new Date();
+  const weekStart = startOfWeek(now);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 7);
+
+  let totalMs = 0;
+
+  for (const c of clocks.value) {
+    if (!c.clockIn) continue;
+    const inDate = new Date(c.clockIn);
+    const outDate = c.clockOut ? new Date(c.clockOut) : new Date();
+
+    // intervalle pointage [inDate, outDate]
+    const start = inDate > weekStart ? inDate : weekStart;
+    const end = outDate < weekEnd ? outDate : weekEnd;
+
+    if (end > start) {
+      totalMs += end - start;
+    }
+  }
+
+  return formatDuration(totalMs);
+});
+
+onMounted(() => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (user && user.id) fetchClocksByUser(user.id);
+});
 
 </script>

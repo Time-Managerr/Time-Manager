@@ -1,11 +1,11 @@
-<script setup>
-import { onMounted, ref } from "vue";
+<!-- <script setup>
+import { onMounted, ref, computed } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
 const clocks = ref([]);
 const getDate = (dateString) => dateString.split("T")[0];
-const getHeure = (dateString) => dateString?.slice(11, 19) || "Non renseigné";
+const getHeure = (dateString) => dateString.slice(11, 19) || "Non renseigné";
 
 const fetchClocksByIdUser = async (userId) => {
   const response = await fetch(`http://127.0.0.1:3000/clocks/user/${userId}`);
@@ -18,6 +18,9 @@ const redirection = (id) => {
   router.push(`/clock/${id}`);
 };
 
+// Limite à 7 éléments
+const limitedClocks = computed(() => clocks.value.slice(0, 7));
+
 onMounted(() => {
   const user = JSON.parse(localStorage.getItem("user"));
   if (user && user.id) {
@@ -26,14 +29,13 @@ onMounted(() => {
     console.error("Aucun utilisateur trouvé");
   }
 });
-</script>
+</script> -->
 
 <template>
-    <div class="d-flex flex-column justify-content-between mx-auto my-4 shadow card p-3">
-        <h4 class="fw-semibold mt-2 mb-4">My previous clocks</h4>
-        <div class="rounded-3 overflow-auto">
-            <table class="table table-striped text-center fw-medium">
-            <thead>
+  <div class="d-flex flex-column justify-content-between mx-auto my-4 shadow card p-3">
+    <h4 class="fw-semibold mt-2 mb-4">My previous clocks</h4>
+    <table class="table table-striped text-center fw-medium">
+      <thead class="table-primary">
                 <tr class="table-primary">
                     <th scope="col">
                         <svg class="col-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M20 10V7C20 5.89543 19.1046 5 18 5H6C4.89543 5 4 5.89543 4 7V10M20 10V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V10M20 10H4M8 3V7M16 3V7" stroke="#1b93b1" stroke-width="2" stroke-linecap="round"></path> <rect x="6" y="12" width="3" height="3" rx="0.5" fill="#1b93b1"></rect> <rect x="10.5" y="12" width="3" height="3" rx="0.5" fill="#1b93b1"></rect> <rect x="15" y="12" width="3" height="3" rx="0.5" fill="#1b93b1"></rect> </g></svg>
@@ -49,16 +51,62 @@ onMounted(() => {
                     </th>                    
                 </tr>
             </thead>
-            <tbody>
-                <tr v-for="clock in clocks" :key="clock.id" @click="redirection(clock.id)">
-                    <td scope="row">{{ getDate(clock.createdAt) }}</td>
-                    <td class="text-success">{{ getHeure(clock.clockIn) }}</td>
-                    <td class="text-danger">{{ getHeure(clock.clockOut)}}</td>
-                    <td >{{clock.hoursWorked}}</td>
-                </tr>
-            </tbody>
-        </table>
-        </div>
-        
-    </div>
+      <tbody class="scroll-tbody">
+        <tr v-for="clock in limitedClocks" :key="clock.id" @click="redirection(clock.id)">
+          <td scope="row">{{ getDate(clock.createdAt) }}</td>
+          <td class="text-success">{{ getHeure(clock.clockIn) }}</td>
+          <td class="text-danger">{{ getHeure(clock.clockOut) }}</td>
+          <td>{{ clock.hoursWorked }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </template>
+
+<script setup>
+import { onMounted, ref, computed } from "vue";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
+const clocks = ref([]);
+const getDate = (dateString) => dateString.split("T")[0];
+const getHeure = (dateString) => dateString.slice(11, 19) || "Non renseigné";
+
+const fetchClocksByIdUser = async (userId) => {
+  const response = await fetch(`http://127.0.0.1:3000/clocks/user/${userId}`);
+  const data = await response.json();
+  clocks.value = data;
+};
+
+const redirection = (id) => {
+  router.push(`/clock/${id}`);
+};
+
+const limitedClocks = computed(() => clocks.value.slice(0, 60));
+
+onMounted(() => {
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (user && user.id) fetchClocksByIdUser(user.id);
+});
+</script>
+
+<style scoped>
+.scroll-tbody {
+  display: block;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.scroll-tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+table thead,
+table tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+</style>
