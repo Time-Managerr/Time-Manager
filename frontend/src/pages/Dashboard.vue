@@ -152,17 +152,25 @@ async function clockOut() {
       throw new Error("Impossible de pointer : ID utilisateur manquant !");
     }
 
-    // Récupérer le dernier clock actif de l'utilisateur
-    const lastClock = await clockInstance.clockOut(clock.value.userId);
+    //  Récupérer tous les clocks de l'utilisateur
+    const clocks = await clockInstance.getByUserId(clock.value.userId);
 
-    if (!lastClock || !lastClock.idClock) {
+    if (!clocks || clocks.length === 0) {
+      throw new Error("Aucun pointage trouvé pour cet utilisateur !");
+    }
+
+    // Identifier le dernier pointage
+    const lastClock = clocks.sort((a, b) => b.idClock - a.idClock)[0];
+
+    if (!lastClock) {
       throw new Error("Aucun pointage actif trouvé pour cet utilisateur.");
     }
 
+    //  Préparer la date de sortie
     const now = new Date().toISOString();
     clock.value.clockOut = now;
 
-    // Mettre à jour le pointage (clockOut)
+    //  Mettre à jour ce dernier pointage
     const data = await clockInstance.clockOut(lastClock.idClock, clock.value.clockOut);
 
     success.value = "Vous avez terminé votre pointage !";

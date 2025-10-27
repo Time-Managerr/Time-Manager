@@ -5,7 +5,7 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 const clocks = ref([]);
 const getDate = (dateString) => dateString.split("T")[0];
-const getHeure = (dateString) => dateString.slice(11, 19);
+const getHeure = (dateString) => dateString?.slice(11, 19) || "Non renseigné";
 
 const fetchClocksByIdUser = async (userId) => {
   const response = await fetch(`http://127.0.0.1:3000/clocks/user/${userId}`);
@@ -53,7 +53,7 @@ onMounted(() => {
                 <tr v-for="clock in clocks" :key="clock.id" @click="redirection(clock.id)">
                     <td scope="row">{{ getDate(clock.createdAt) }}</td>
                     <td class="text-success">{{ getHeure(clock.clockIn) }}</td>
-                    <td class="text-danger">{{ getHeure(clock.clockOut) || 'Non pointé' }}</td>
+                    <td class="text-danger">{{ getHeure(clock.clockOut)}}</td>
                     <td >{{clock.hoursWorked}}</td>
                 </tr>
             </tbody>

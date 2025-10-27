@@ -28,8 +28,8 @@ export default {
   },
 
   // Créer une entrée de pointage (clock-out)
-  async clockOut(req, res) {
-  const { id } = req.params;
+  async clockOut(req, res) {  
+  const { idClock } = req.params;
 
   try {
     // Valide la date de clock-out
@@ -37,7 +37,7 @@ export default {
 
     // Vérifie si le pointage existe
     const existingClock = await prisma.clocks.findUnique({
-      where: { idClock: parseInt(id) },
+      where: { idClock: parseInt(idClock) },
     });
 
     if (!existingClock) {
@@ -51,7 +51,7 @@ export default {
 
     // Mise à jour du pointage
     const updatedClock = await prisma.clocks.update({
-      where: { idClock: parseInt(id) },
+      where: { idClock: parseInt(idClock) },
       data: {
         clockOut: validatedData.clockOut,
         hoursWorked: hoursWorked,
