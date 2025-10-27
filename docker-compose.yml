@@ -20,15 +20,13 @@ services:
       - ./backend/.env
     depends_on:
       - db
-    expose:
-      - "3000"
+    ports:
+      - "3000:3000"
 
   frontend:
     build: ./frontend
     image: time-manager-frontend:local
     container_name: time-manager-frontend
-    expose:
-      - "5173"
 
   nginx:
     image: nginx:stable-alpine
