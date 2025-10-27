@@ -2,13 +2,15 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import userRoutes from "./routes/Users.js";
-import authRoutes from "./routes/auth.js";
+import authRoutes from "./routes/Auth.js";
 import clocksRoutes from "./routes/Clocks.js";
+import { setupSwagger } from './config/swagger.js';
 
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT;
 
+setupSwagger(app);
 
 const corsOptions = {
   origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
