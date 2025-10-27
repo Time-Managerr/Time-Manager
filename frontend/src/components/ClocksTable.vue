@@ -82,7 +82,6 @@ const redirection = (id) => {
   router.push(`/clock/${id}`);
 };
 
-// Trier par createdAt décroissant (du plus récent au plus ancien) puis limiter
 const limitedClocks = computed(() => {
   if (!clocks.value || clocks.value.length === 0) return [];
   return [...clocks.value]
