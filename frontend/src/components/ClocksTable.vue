@@ -82,7 +82,13 @@ const redirection = (id) => {
   router.push(`/clock/${id}`);
 };
 
-const limitedClocks = computed(() => clocks.value.slice(0, 60));
+// Trier par createdAt décroissant (du plus récent au plus ancien) puis limiter
+const limitedClocks = computed(() => {
+  if (!clocks.value || clocks.value.length === 0) return [];
+  return [...clocks.value]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 60);
+});
 
 onMounted(() => {
   const user = JSON.parse(localStorage.getItem("user"));
