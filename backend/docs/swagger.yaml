@@ -1,0 +1,189 @@
+openapi: 3.0.0
+info:
+  title: Time Manager API
+  version: 1.0.0
+
+paths:
+  /auth/login:
+    post:
+      summary: Authentifie un utilisateur
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: test@mail.com
+                password:
+                  type: string
+                  example: 1234
+      responses:
+        '200':
+          description: Connexion réussie
+
+  /users:
+    post:
+      summary: Crée un nouvel utilisateur
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: Utilisateur créé avec succès
+
+    get:
+      summary: Récupère tous les utilisateurs
+      security:
+        - bearerAuth: []
+      tags:
+        - Users
+      responses:
+        '200':
+          description: Liste des utilisateurs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Token manquant ou invalide
+
+  /users/{id}:
+    get:
+      summary: Récupère un utilisateur par ID
+      security:
+        - bearerAuth: []
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID de l'utilisateur
+      responses:
+        '200':
+          description: Utilisateur trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Token manquant ou invalide
+        '404':
+          description: Utilisateur introuvable
+
+    put:
+      summary: Modifie un utilisateur existant
+      security:
+        - bearerAuth: []
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID de l'utilisateur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '200':
+          description: Utilisateur modifié avec succès
+        '404':
+          description: Utilisateur non trouvé
+
+    delete:
+      summary: Supprime un utilisateur existant
+      security:
+        - bearerAuth: []
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID de l'utilisateur
+      responses:
+        '204':
+          description: Utilisateur supprimé avec succès
+        '404':
+          description: Utilisateur non trouvé
+
+components:
+  schemas:
+    UserCreate:
+      type: object
+      required:
+        - firstname
+        - lastname
+        - email
+        - password
+        - phone
+        - profile
+      properties:
+        firstname:
+          type: string
+          example: "Jean"
+        lastname:
+          type: string
+          example: "Loris"
+        email:
+          type: string
+          example: "test@mail.fr"
+        password:
+          type: string
+          example: "Admin123!"
+        phone:
+          type: string
+          example: "06254851"
+        profile:
+          type: string
+          example: "manager"
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        firstname:
+          type: string
+          example: "Jean"
+        lastname:
+          type: string
+          example: "Loris"
+        email:
+          type: string
+          example: "test@mail.fr"
+        phone:
+          type: string
+          example: "06254851"
+        profile:
+          type: string
+          example: "manager"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
