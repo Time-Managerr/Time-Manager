@@ -1,35 +1,50 @@
-<!-- <script setup>
+<script setup>
 import { onMounted, ref, computed } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
 const clocks = ref([]);
-const getDate = (dateString) => dateString.split("T")[0];
-const getHeure = (dateString) => dateString.slice(11, 19) || "Non renseigné";
+const getDate = (dateString) => {
+  if (!dateString) return '—';
+  try {
+    return String(dateString).split('T')[0];
+  } catch (e) {
+    return String(dateString);
+  }
+};
+
+const getHeure = (dateString) => {
+  if (!dateString) return 'Non renseigné';
+  try {
+    const s = String(dateString);
+    return s.length >= 19 ? s.slice(11, 19) : s.slice(11) || 'Non renseigné';
+  } catch (e) {
+    return 'Non renseigné';
+  }
+};
 
 const fetchClocksByIdUser = async (userId) => {
   const response = await fetch(`http://127.0.0.1:3000/clocks/user/${userId}`);
   const data = await response.json();
   clocks.value = data;
-  console.log("Clocks for user", userId, "fetched:", data);
 };
 
 const redirection = (id) => {
   router.push(`/clock/${id}`);
 };
 
-// Limite à 7 éléments
-const limitedClocks = computed(() => clocks.value.slice(0, 7));
+const limitedClocks = computed(() => {
+  if (!clocks.value || clocks.value.length === 0) return [];
+  return [...clocks.value]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 60);
+});
 
 onMounted(() => {
   const user = JSON.parse(localStorage.getItem("user"));
-  if (user && user.id) {
-    fetchClocksByIdUser(user.id);
-  } else {
-    console.error("Aucun utilisateur trouvé");
-  }
+  if (user && user.id) fetchClocksByIdUser(user.id);
 });
-</script> -->
+</script>
 
 <template>
   <div class="d-flex flex-column justify-content-between mx-auto my-4 shadow card p-3">
@@ -62,38 +77,6 @@ onMounted(() => {
     </table>
   </div>
 </template>
-
-<script setup>
-import { onMounted, ref, computed } from "vue";
-import { useRouter } from "vue-router";
-
-const router = useRouter();
-const clocks = ref([]);
-const getDate = (dateString) => dateString.split("T")[0];
-const getHeure = (dateString) => dateString.slice(11, 19) || "Non renseigné";
-
-const fetchClocksByIdUser = async (userId) => {
-  const response = await fetch(`http://127.0.0.1:3000/clocks/user/${userId}`);
-  const data = await response.json();
-  clocks.value = data;
-};
-
-const redirection = (id) => {
-  router.push(`/clock/${id}`);
-};
-
-const limitedClocks = computed(() => {
-  if (!clocks.value || clocks.value.length === 0) return [];
-  return [...clocks.value]
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 60);
-});
-
-onMounted(() => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  if (user && user.id) fetchClocksByIdUser(user.id);
-});
-</script>
 
 <style scoped>
 .scroll-tbody {

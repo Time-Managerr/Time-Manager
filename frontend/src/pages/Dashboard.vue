@@ -69,7 +69,9 @@ import confetti from 'canvas-confetti';
 import { ref, onMounted } from 'vue';
 import clockInstance from '../services/clockService.js';
 import WorkedWeek from '../components/WorkedWeek.vue';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const user = ref(null);
 const avatar = ref(null);
 const currentClock = ref(null);
@@ -111,6 +113,9 @@ async function clockIn() {
 
     success.value = "Vous avez pointé !";
     showConfetti();
+    setTimeout(() => {
+    router.go(0);
+  }, 1000);
     console.log("Pointage créé :", data);
   } catch (error) {
     console.error("Erreur lors du pointage :", error);
@@ -133,6 +138,9 @@ async function clockOut() {
 
     success.value = "Vous avez terminé votre pointage !";
     showConfetti();
+     setTimeout(() => {
+    router.go(0);
+  }, 1000);
     console.log("Pointage mis à jour :", data);
   } catch (error) {
     console.error("Erreur lors du clock-out :", error);
