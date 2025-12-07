@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref, computed } from "vue";
 import { useRouter } from "vue-router";
+import { api } from "../services/api";
 
 const router = useRouter();
 const clocks = ref([]);
@@ -24,8 +25,8 @@ const getHeure = (dateString) => {
 };
 
 const fetchClocksByIdUser = async (userId) => {
-  const response = await fetch(`http://127.0.0.1:3000/clocks/user/${userId}`);
-  const data = await response.json();
+  const response = await api.get(`clocks/user/${userId}`);
+  const data = await response.data;
   clocks.value = data;
 };
 
