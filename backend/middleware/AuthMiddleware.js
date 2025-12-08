@@ -22,7 +22,7 @@ export const verifyToken = (req, res, next) => {
         return res.status(403).json({ error: "Token invalide ou expiré." });
       }
 
-      req.user = decoded; // ✅ stocke les infos du token
+      req.user = decoded; //  stocke les infos du token
       next();
     });
   } catch (error) {

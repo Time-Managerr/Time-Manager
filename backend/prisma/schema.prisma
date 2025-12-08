@@ -1,5 +1,6 @@
 generator client {
   provider        = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
   previewFeatures = ["fullTextIndex", "fullTextSearch"]
 }
 
@@ -8,29 +9,30 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model clocks {
+model Clocks {
   idClock     Int       @id @default(autoincrement())
   userId      Int
   clockIn     DateTime
+  createdAt   DateTime  @default(now())
   clockOut    DateTime?
   hoursWorked Float?
-  users       users     @relation(fields: [userId], references: [idUser], map: "Clocks_userId_fkey")
+  Users       Users     @relation(fields: [userId], references: [idUser])
 
   @@index([userId], map: "Clocks_userId_fkey")
 }
 
-model plannings {
+model Plannings {
   idPlanning Int      @id @default(autoincrement())
   userId     Int
   date       DateTime
   startTime  DateTime
   endTime    DateTime
-  users      users    @relation(fields: [userId], references: [idUser], map: "Plannings_userId_fkey")
+  Users      Users    @relation(fields: [userId], references: [idUser])
 
   @@index([userId], map: "Plannings_userId_fkey")
 }
 
-model reports {
+model Reports {
   idReport  Int      @id @default(autoincrement())
   kpi       String
   startDate DateTime
@@ -38,78 +40,78 @@ model reports {
   createdAt DateTime @default(now())
   userId    Int
   teamId    Int
-  teams     teams    @relation(fields: [teamId], references: [idTeam], map: "Reports_teamId_fkey")
-  users     users    @relation(fields: [userId], references: [idUser], map: "Reports_userId_fkey")
+  Teams     Teams    @relation(fields: [teamId], references: [idTeam])
+  Users     Users    @relation(fields: [userId], references: [idUser])
 
   @@index([teamId], map: "Reports_teamId_fkey")
   @@index([userId], map: "Reports_userId_fkey")
 }
 
-model roles {
+model Roles {
   idRole    Int         @id @default(autoincrement())
-  name      String      @unique(map: "Roles_name_key")
-  userroles userroles[]
+  name      String      @unique
+  UserRoles UserRoles[]
 }
 
-model teams {
+model TeamUser {
+  id     Int   @id @default(autoincrement())
+  teamId Int
+  userId Int
+  Teams  Teams @relation(fields: [teamId], references: [idTeam])
+  Users  Users @relation(fields: [userId], references: [idUser])
+
+  @@unique([teamId, userId])
+  @@index([userId], map: "TeamUser_userId_fkey")
+}
+
+model Teams {
   idTeam      Int        @id @default(autoincrement())
-  name        String     @unique(map: "Teams_name_key")
+  name        String     @unique
   description String?
   managerId   Int
-  reports     reports[]
-  users       users      @relation(fields: [managerId], references: [idUser], map: "Teams_managerId_fkey")
-  teamuser    teamuser[]
+  Reports     Reports[]
+  TeamUser    TeamUser[]
+  Users       Users      @relation(fields: [managerId], references: [idUser])
 
   @@index([managerId], map: "Teams_managerId_fkey")
 }
 
-model teamuser {
-  id     Int   @id @default(autoincrement())
-  teamId Int
-  userId Int
-  teams  teams @relation(fields: [teamId], references: [idTeam], map: "TeamUser_teamId_fkey")
-  users  users @relation(fields: [userId], references: [idUser], map: "TeamUser_userId_fkey")
-
-  @@unique([teamId, userId], map: "TeamUser_teamId_userId_key")
-  @@index([userId], map: "TeamUser_userId_fkey")
-}
-
-model userroles {
+model UserRoles {
   idUserRole Int   @id @default(autoincrement())
   userId     Int
   roleId     Int
-  roles      roles @relation(fields: [roleId], references: [idRole], map: "UserRoles_roleId_fkey")
-  users      users @relation(fields: [userId], references: [idUser], map: "UserRoles_userId_fkey")
+  Roles      Roles @relation(fields: [roleId], references: [idRole])
+  Users      Users @relation(fields: [userId], references: [idUser])
 
-  @@unique([userId, roleId], map: "UserRoles_userId_roleId_key")
+  @@unique([userId, roleId])
   @@index([roleId], map: "UserRoles_roleId_fkey")
 }
 
-model users {
+model Users {
   idUser    Int         @id @default(autoincrement())
-  email     String      @unique(map: "Users_email_key")
+  email     String      @unique
   firstname String
   lastname  String
   password  String
   phone     Int
   profile   String?
-  clocks    clocks[]
-  plannings plannings[]
-  reports   reports[]
-  teams     teams[]
-  teamuser  teamuser[]
-  userroles userroles[]
-  vacations vacations[]
+  Clocks    Clocks[]
+  Plannings Plannings[]
+  Reports   Reports[]
+  TeamUser  TeamUser[]
+  Teams     Teams[]
+  UserRoles UserRoles[]
+  Vacations Vacations[]
 }
 
-model vacations {
+model Vacations {
   idVacation Int      @id @default(autoincrement())
   userId     Int
   startDate  DateTime
   endDate    DateTime
   status     String   @default("pending")
   createdAt  DateTime @default(now())
-  users      users    @relation(fields: [userId], references: [idUser], map: "Vacations_userId_fkey")
+  Users      Users    @relation(fields: [userId], references: [idUser])
 
   @@index([userId], map: "Vacations_userId_fkey")
 }

@@ -1,14 +1,14 @@
 import request from "supertest";
-import { app } from "../app.js";
+import { app } from "../../app.js";
 
 describe("Auth Login - full coverage", () => {
 
   it("should login successfully with valid credentials", async () => {
     const response = await request(app)
-      .post("/v1/auth/login")
+      .post("/auth/login")
       .send({
-        email: "eldjsalim@gmail.com",
-        password: "Password1!",
+        email: "william@test.com",
+        password: "Epitech1!",
       });
 
     expect(response.statusCode).toBe(200);
@@ -18,9 +18,9 @@ describe("Auth Login - full coverage", () => {
 
   it("should fail to login with wrong password", async () => {
     const response = await request(app)
-      .post("/v1/auth/login")
+      .post("/auth/login")
       .send({
-        email: "eldjsalim@gmail.com",
+        email: "william@test.com",
         password: "WrongPassword!",
       });
 
@@ -30,10 +30,10 @@ describe("Auth Login - full coverage", () => {
 
   it("should fail to login with non-existent email", async () => {
     const response = await request(app)
-      .post("/v1/auth/login")
+      .post("/auth/login")
       .send({
         email: "userinexistant@example.com",
-        password: "Password1!",
+        password: "Epitech1!",
       });
 
     // Certaines API renvoient 404 (user not found), d’autres 401
@@ -43,9 +43,9 @@ describe("Auth Login - full coverage", () => {
 
   it("should fail if email is missing", async () => {
     const response = await request(app)
-      .post("/v1/auth/login")
+      .post("/auth/login")
       .send({
-        password: "Password1!",
+        password: "Epitech1!",
       });
 
     expect(response.statusCode).toBe(400);
@@ -54,9 +54,9 @@ describe("Auth Login - full coverage", () => {
 
   it("should fail if password is missing", async () => {
     const response = await request(app)
-      .post("/v1/auth/login")
+      .post("/auth/login")
       .send({
-        email: "eldjsalim@gmail.com",
+        email: "william@test.com",
       });
 
     expect(response.statusCode).toBe(400);
@@ -65,10 +65,10 @@ describe("Auth Login - full coverage", () => {
 
   it("should fail if email format is invalid", async () => {
     const response = await request(app)
-      .post("/v1/auth/login")
+      .post("/auth/login")
       .send({
         email: "not-an-email",
-        password: "Password1!",
+        password: "Epitech1!",
       });
 
     expect(response.statusCode).toBe(400);

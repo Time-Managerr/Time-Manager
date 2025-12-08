@@ -14,7 +14,13 @@
 }
 
 /* Reset margins and paddings for all elements */
-h1, h2, h3, h4, h5, h6, p {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -47,6 +53,7 @@ button {
 button:hover {
   border-color: #646cff;
 }
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
@@ -56,14 +63,51 @@ button:focus-visible {
   padding: 2em;
 }
 
+/* Custom width utilities */
+.w-10 {
+  width: 10% !important;
+}
+
+.w-33 {
+  width: 33% !important;
+}
+
+.w-66 {
+  width: 66% !important;
+}
+
+.w-80 {
+  width: 80% !important;
+}
+
+/* src/assets/custom-bootstrap.css */
+.bg-blue-primary {
+  background-color: #2b4570 !important;
+}
+
+.text-blue-primary {
+  color: #1F2D5C !important;
+}
+
+.bg-blue-sky {
+  background-color: #78a1bb !important;
+}
+
+.text-blue-sky {
+  color: #78a1bb !important;
+}
+
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
     background-color: #ffffff;
   }
+
   a:hover {
     color: #747bff;
   }
+
   button {
     background-color: #f9f9f9;
   }

@@ -1,77 +1,96 @@
-# Time-Manager
+# Time Manager Project
 
-Run the frontend dev server (Vue + Vite)
-
-1. Install dependencies
-
-```powershell
-cd frontend
-npm install
-```
-
-2. Start dev server
-
-```powershell
-npm run dev
-```
-# Vue 3 + Vite
+This project is a **full-stack time manager application** built with **Vue.js (frontend)**, **Node.js (backend)**, **MariaDB**, and **Nginx** for production.
 
 ---
 
-Backend (API) - quick run & Prisma
+## 1️⃣ Prerequisites
 
-1. Install backend deps
+* [Docker](https://www.docker.com/get-started) & Docker Compose installed
+* [Node.js](https://nodejs.org/) (for running frontend in development)
+* npm (comes with Node.js)
 
-```powershell
-cd backend
+---
+
+## 2️⃣ Running the Production Version
+
+The production setup runs **4 Docker containers**:
+
+* **db**: MariaDB database
+* **backend**: Node.js API
+* **frontend**: Vue.js built app served by Nginx
+* **nginx**: reverse proxy for frontend and backend
+
+### Steps:
+
+1. Build and start containers:
+
+```bash
+docker compose up --build -d
+```
+
+2. Open your browser at:
+
+```
+http://localhost
+```
+
+3. The app is now running with:
+
+* Frontend served by Nginx
+* API calls routed via `/api` to the backend
+* Database persisted in Docker volume
+
+4. To stop containers:
+
+```bash
+docker compose down
+```
+
+---
+
+## 3️⃣ Running the Development Version
+
+In development, we run:
+
+* **DB** and **backend** in Docker
+* **Frontend** locally using Vite (hot reload enabled)
+
+### Steps:
+
+1. Start backend and database:
+
+```bash
+docker compose up -d db backend
+```
+
+2. Start frontend locally:
+
+```bash
+cd frontend
 npm install
-```
-
-2. Create `.env` in `backend/` (example)
-
-```powershell
-@'
-DATABASE_URL="mysql://app_user:root@127.0.0.1:3306/time_manager"
-BASE_URL="http://localhost:5173"
-PORT=3000
-'@ | Out-File -Encoding utf8 .\.env
-```
-
-3. Generate Prisma client and push schema to DB
-
-```powershell
-cd backend
-npx prisma generate
-# push schema (fast for dev)
-npx prisma db push
-```
-
-4. Start the backend server
-
-```powershell
-# dev with nodemon
 npm run dev
-# or production
-npm start
 ```
 
-5. Inspect the database (Prisma Studio)
+3. Open your browser at:
 
-```powershell
-cd backend
-npx prisma studio
+```
+http://localhost:5173
 ```
 
-Docker (optional): start only DB or full stack
+* The frontend uses **Vite proxy** to forward `/api` calls to `http://localhost:3000`
+* You can edit frontend files and see changes **instantly** without rebuilding Docker containers
 
-```powershell
-cd "c:\Github Projects\Time-Manager"
-# start db service only
-docker-compose up -d db
-# or full stack (fix Dockerfile CMD if needed)
-docker-compose up --build
+4. To stop backend and database:
+
+```bash
+docker compose down
 ```
 
-Troubleshooting:
-- If `prisma db push` fails, ensure `DATABASE_URL` is correct and the DB is running.
-- If the backend container exits immediately, check `backend/Dockerfile` CMD (should be `CMD ["npm","start"]` or `CMD ["npm","run","dev"]`).
+---
+
+## 4️⃣ Notes
+
+* All API requests use relative paths (`/api/...`) so the same frontend code works in **both dev and prod**.
+* Database data is persisted in Docker volumes (`db_data`).
+* The development setup does **not use Nginx**, so frontend hot reload works directly with Vite.
