@@ -2,16 +2,22 @@
   <main class="flex-fill p-4">
     <section class="home w-75 mx-auto">
       <h2 class="fw-bold mb-xl-5 mx-auto">Dashboard</h2>
+
       <div class="d-flex gap-lg-5 mx-auto">
         <WorkedWeek />
         <Chrono :startTime="currentClock?.clockIn" />
       </div>
+
       <div class="d-flex gap-lg-5 mx-auto mt-4">
+        <!-- CLOCK IN -->
         <div class="w-50 h-auto">
           <div class="d-flex flex-column gap-2 align-items-center shadow card p-3">
             <h5>Clock in</h5>
+
             <div class="w-50 h-auto">
-              <svg viewBox="0 0 1024 1024" class="icon" version="1.1" xmlns="http://www.w3.org/2000/svg" fill="#000000">
+              <!-- SVG VERT D’ORIGINE -->
+              <svg viewBox="0 0 1024 1024" class="icon" version="1.1"
+                   xmlns="http://www.w3.org/2000/svg" fill="#000000">
                 <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                 <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
                 <g id="SVGRepo_iconCarrier">
@@ -42,18 +48,34 @@
                 </g>
               </svg>
             </div>
+
             <p class="my-3 text-center fst-italic">Clock in before starting your work.</p>
-            <button class="btn btn-success" @click="clockIn" :disabled="isClockInDisabled"
-              :class="{ 'disabled-btn': isClockInDisabled }">
-              Start
-            </button>
+
+            <!-- SLIDER CLOCK IN -->
+            <div class="slider-container" :class="{ disabled: isClockInDisabled }">
+              <div class="slider-track">
+                <div
+                  class="slider-handle"
+                  :style="{ left: sliderInX + 'px' }"
+                  @mousedown="startDragIn"
+                >
+                  <span class="slider-icon">▶️</span>
+                </div>
+                <span class="slider-text">Slide to Clock In</span>
+              </div>
+            </div>
           </div>
         </div>
+
+        <!-- CLOCK OUT -->
         <div class="w-50 h-auto">
           <div class="d-flex flex-column gap-2 align-items-center shadow card p-3">
             <h5>Clock out</h5>
+
             <div class="w-50 h-auto">
-              <svg viewBox="0 0 1024 1024" class="icon" version="1.1" xmlns="http://www.w3.org/2000/svg" fill="#000000">
+              <!-- SVG ROUGE D’ORIGINE -->
+              <svg viewBox="0 0 1024 1024" class="icon" version="1.1"
+                   xmlns="http://www.w3.org/2000/svg" fill="#000000">
                 <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
                 <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
                 <g id="SVGRepo_iconCarrier">
@@ -69,14 +91,26 @@
                 </g>
               </svg>
             </div>
+
             <p class="my-3 text-center fst-italic">Recent activities or tasks.</p>
-            <button class="btn btn-danger" @click="clockOut" :disabled="isClockOutDisabled"
-              :class="{ 'disabled-btn': isClockOutDisabled }">
-              Clock out
-            </button>
+
+            <!-- SLIDER CLOCK OUT -->
+            <div class="slider-container" :class="{ disabled: isClockOutDisabled }">
+              <div class="slider-track">
+                <div
+                  class="slider-handle handle-out"
+                  :style="{ left: sliderOutX + 'px' }"
+                  @mousedown="startDragOut"
+                >
+                  <span class="slider-icon">⏹️</span>
+                </div>
+                <span class="slider-text">Slide to Clock Out</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
       <ClocksTable />
     </section>
   </main>
@@ -85,21 +119,47 @@
 <script setup>
 import ClocksTable from '../components/ClocksTable.vue';
 import Chrono from '../components/Chrono.vue';
+import WorkedWeek from '../components/WorkedWeek.vue';
+import clockInstance from '../services/clockService.js';
 import confetti from 'canvas-confetti';
 import { ref, onMounted, computed } from 'vue';
-import clockInstance from '../services/clockService.js';
-import WorkedWeek from '../components/WorkedWeek.vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
 const user = ref(null);
-const avatar = ref(null);
 const currentClock = ref(null);
-let success = ref(null);
 
 const isClockInDisabled = computed(() => currentClock.value !== null);
 const isClockOutDisabled = computed(() => currentClock.value === null);
 
+let clock = ref({
+  userId: "",
+  clockIn: "",
+  clockOut: "",
+});
+
+// Slider state
+const sliderInX = ref(0);
+const sliderOutX = ref(0);
+let draggingIn = false;
+let draggingOut = false;
+let startXIn = 0;
+let startXOut = 0;
+let maxX = 0;
+
+onMounted(() => {
+  const storedUser = JSON.parse(localStorage.getItem("user"));
+  if (storedUser) {
+    user.value = storedUser;
+    clock.value.userId = storedUser.id || storedUser.userId;
+    fetchCurrentClock();
+  }
+
+  setTimeout(() => {
+    const track = document.querySelector(".slider-track");
+    if (track) maxX = track.offsetWidth - 60;
+  }, 300);
+});
 
 const fetchCurrentClock = async () => {
   if (!clock.value.userId) return;
@@ -107,92 +167,147 @@ const fetchCurrentClock = async () => {
   currentClock.value = clocks.find(c => !c.clockOut) || null;
 };
 
-let clock = ref({
-  userId: "", // ID de l'utilisateur
-  clockIn: "",
-  clockOut: "",
-});
+/* SLIDER CLOCK IN */
+function startDragIn(e) {
+  if (isClockInDisabled.value) return;
+  draggingIn = true;
+  startXIn = e.clientX - sliderInX.value;
+  document.addEventListener("mousemove", onDragIn);
+  document.addEventListener("mouseup", endDragIn);
+}
 
-onMounted(() => {
-  const storedUser = JSON.parse(localStorage.getItem("user"));
-  if (storedUser) {
-    user.value = storedUser;
-    clock.value.userId = storedUser.id || storedUser.userId;
-    if (storedUser.avatar) avatar.value = storedUser.avatar;
-    fetchCurrentClock(); // récupère le dernier pointage actif
+function onDragIn(e) {
+  if (!draggingIn) return;
+  sliderInX.value = Math.max(0, Math.min(maxX, e.clientX - startXIn));
+}
+
+function endDragIn() {
+  if (!draggingIn) return;
+  draggingIn = false;
+
+  if (sliderInX.value >= maxX - 20) {
+    clockIn();
   }
-});
+  sliderInX.value = 0;
 
+  document.removeEventListener("mousemove", onDragIn);
+  document.removeEventListener("mouseup", endDragIn);
+}
+
+/* SLIDER CLOCK OUT */
+function startDragOut(e) {
+  if (isClockOutDisabled.value) return;
+  draggingOut = true;
+  startXOut = e.clientX - sliderOutX.value;
+  document.addEventListener("mousemove", onDragOut);
+  document.addEventListener("mouseup", endDragOut);
+}
+
+function onDragOut(e) {
+  if (!draggingOut) return;
+  sliderOutX.value = Math.max(0, Math.min(maxX, e.clientX - startXOut));
+}
+
+function endDragOut() {
+  if (!draggingOut) return;
+  draggingOut = false;
+
+  if (sliderOutX.value >= maxX - 20) {
+    clockOut();
+  }
+  sliderOutX.value = 0;
+
+  document.removeEventListener("mousemove", onDragOut);
+  document.removeEventListener("mouseup", endDragOut);
+}
+
+/* CLOCK IN / OUT */
 async function clockIn() {
-  console.clear();
-  success.value = null;
-
   try {
-    if (!clock.value.userId) throw new Error("ID utilisateur manquant !");
     const now = new Date().toISOString();
     clock.value.clockIn = now;
 
-    const data = await clockInstance.clockIn(clock.value.userId, clock.value.clockIn);
-    currentClock.value = data; // ← nouveau pointage actif
+    const data = await clockInstance.clockIn(clock.value.userId, now);
+    currentClock.value = data;
 
-    success.value = "Vous avez pointé !";
     showConfetti();
-    setTimeout(() => {
-      router.go(0);
-    }, 1000);
-    console.log("Pointage créé :", data);
-  } catch (error) {
-    console.error("Erreur lors du pointage :", error);
-    success.value = "Erreur lors du pointage.";
+    setTimeout(() => router.go(0), 600);
+  } catch (e) {
+    console.error(e);
   }
 }
 
-
 async function clockOut() {
-  console.clear();
-  success.value = null;
-
   try {
-    if (!currentClock.value) throw new Error("Aucun pointage actif !");
     const now = new Date().toISOString();
     clock.value.clockOut = now;
 
-    const data = await clockInstance.clockOut(currentClock.value.idClock, clock.value.clockOut);
-    currentClock.value = null; // plus de chrono actif
+    await clockInstance.clockOut(currentClock.value.idClock, now);
+    currentClock.value = null;
 
-    success.value = "Vous avez terminé votre pointage !";
     showConfetti();
-    setTimeout(() => {
-      router.go(0);
-    }, 1000);
-    console.log("Pointage mis à jour :", data);
-  } catch (error) {
-    console.error("Erreur lors du clock-out :", error);
-    success.value = "Erreur lors du pointage de sortie.";
+    setTimeout(() => router.go(0), 600);
+  } catch (e) {
+    console.error(e);
   }
 }
 
-
 function showConfetti() {
-  confetti({
-    particleCount: 150,
-    spread: 180,
-    origin: { y: 0.6 },
-  });
+  confetti({ particleCount: 150, spread: 180, origin: { y: 0.6 } });
 }
 </script>
 
-
 <style scoped>
-.home {
-  text-align: left;
-}
-
-h1 {
-  color: #42b883;
-}
-
 main {
   min-height: 100vh;
+}
+
+/* SLIDER STYLES */
+.slider-container {
+  width: 100%;
+  user-select: none;
+}
+
+.slider-container.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.slider-track {
+  width: 100%;
+  height: 55px;
+  background: #e7f2ff;
+  border-radius: 30px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.slider-handle {
+  width: 55px;
+  height: 55px;
+  background: #34a853;
+  border-radius: 50%;
+  position: absolute;
+  cursor: grab;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 22px;
+  color: white;
+}
+
+.handle-out {
+  background: #d9534f;
+}
+
+.slider-text {
+  margin-left: 80px;
+  font-weight: bold;
+  color: #2d7cea;
+}
+
+.slider-icon {
+  font-size: 22px;
 }
 </style>
