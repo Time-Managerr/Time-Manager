@@ -13,18 +13,22 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: ./backend
+
     strategy:
       matrix:
         node-version: [22.x]
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Node.js Setup ${{ matrix.node.js-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
@@ -32,15 +36,23 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: backend
+
   deploy:
     name: Déploiement
     needs: build-and-test
     runs-on: ubuntu-latest
     # if: github.ref == 'refs/heads/main'
-      # Connexion a docker avec mes variables secret stocké dans github
+
     steps:
       - name: Checkout Code  
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Login DockerHub
         uses: docker/login-action@v2
