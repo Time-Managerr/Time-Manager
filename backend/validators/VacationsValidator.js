@@ -15,7 +15,7 @@ const VacationsValidator = z
         required_error: "La date de début est requise",
         invalid_type_error: "La date de début doit être une chaîne de caractères représentant une date",
       })
-      .refine((val) => !isNaN(Date.parse(val)), {
+      .refine((val) => !Number.isNaN(Date.parse(val)), {
         message: "La date de début doit être une date valide",
       }),
 
@@ -24,7 +24,7 @@ const VacationsValidator = z
         required_error: "La date de fin est requise",
         invalid_type_error: "La date de fin doit être une chaîne de caractères représentant une date",
       })
-      .refine((val) => !isNaN(Date.parse(val)), {
+      .refine((val) => !Number.isNaN(Date.parse(val)), {
         message: "La date de fin doit être une date valide",
       }),
 
@@ -38,7 +38,7 @@ const VacationsValidator = z
       .string({
         invalid_type_error: "createdAt doit être une chaîne de caractères représentant une date",
       })
-      .refine((val) => !isNaN(Date.parse(val)), {
+      .refine((val) => !Number.isNaN(Date.parse(val)), {
         message: "createdAt doit être une date valide",
       })
       .optional(),
