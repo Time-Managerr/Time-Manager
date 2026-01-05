@@ -7,8 +7,8 @@ describe("Auth Login - full coverage", () => {
     const response = await request(app)
       .post("/auth/login")
       .send({
-        email: "william@test.com",
-        password: "Epitech1!",
+        email: "eldjsalim@gmail.com",
+        password: "Password1!",
       });
 
     expect(response.statusCode).toBe(200);
@@ -20,7 +20,7 @@ describe("Auth Login - full coverage", () => {
     const response = await request(app)
       .post("/auth/login")
       .send({
-        email: "william@test.com",
+        email: "eldjsalim@gmail.com",
         password: "WrongPassword!",
       });
 
@@ -33,7 +33,7 @@ describe("Auth Login - full coverage", () => {
       .post("/auth/login")
       .send({
         email: "userinexistant@example.com",
-        password: "Epitech1!",
+        password: "Password1!",
       });
 
     // Certaines API renvoient 404 (user not found), d’autres 401
@@ -45,7 +45,7 @@ describe("Auth Login - full coverage", () => {
     const response = await request(app)
       .post("/auth/login")
       .send({
-        password: "Epitech1!",
+        password: "Password1!",
       });
 
     expect(response.statusCode).toBe(400);
@@ -56,7 +56,7 @@ describe("Auth Login - full coverage", () => {
     const response = await request(app)
       .post("/auth/login")
       .send({
-        email: "william@test.com",
+        email: "eldjsalim@gmail.com",
       });
 
     expect(response.statusCode).toBe(400);
@@ -68,7 +68,7 @@ describe("Auth Login - full coverage", () => {
       .post("/auth/login")
       .send({
         email: "not-an-email",
-        password: "Epitech1!",
+        password: "Password1!",
       });
 
     expect(response.statusCode).toBe(400);
