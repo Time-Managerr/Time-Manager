@@ -6,7 +6,7 @@ const getPlanning = (req, res) => {
 
 const createPlanning = (req, res) => {
   // Idem, simple réponse de test
-  res.status(201).json({ message: "Planning created (fake)", body: req.body });
+  res.status(201).json({ message: "Planning crée test", body: req.body });
 };
 
 export default {

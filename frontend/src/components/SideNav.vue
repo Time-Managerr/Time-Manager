@@ -104,7 +104,7 @@
         <li class="nav-item mb-2"><router-link to="/Profile" class="nav-link">Profile</router-link></li>
         <li class="nav-item mb-2"><router-link to="/Teams" class="nav-link">Teams</router-link></li>
         <li class="nav-item mb-2"><router-link to="/Login" class="nav-link">Logout</router-link></li>
-        <li class="nav-item mb-2"><router-link to="/Planning" class="nav-link">My Planning</router-link></li>
+        <li class="nav-item mb-2"><router-link to="/planning" class="nav-link">My Planning</router-link></li>
       </ul>
     </div>
   </div>

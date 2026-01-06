@@ -10,6 +10,7 @@ const routes = [
   { path: '/profile', component: Profile, meta: { requiresAuth: true } },
   { path: '/teams', component: Teams, meta: { requiresAuth: true } },
   { path: '/login', component: Login },
+  { path: '/planning', component: Planning },
 ]
 
 const router = createRouter({
