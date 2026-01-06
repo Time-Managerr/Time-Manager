@@ -1,92 +1,83 @@
-// src/controllers/TeamsController.js
 import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcrypt";
 import TeamsValidator from "../validators/TeamsValidator.js";
 
 const prisma = new PrismaClient();
 
 export default {
-  // Créer une équipe
+  // --- CRÉER UNE ÉQUIPE ---
   async createTeam(req, res) {
-    console.log("Requête reçue (Team) :", req.body);
-
     try {
-      // Validation des données (nom, description, managerId)
+      // Extraction et validation des données via le validateur Zod
       const validatedData = TeamsValidator.parse(req.body);
 
-      // Vérifier si le nom de l'équipe est déjà pris
+      // Vérifier si le nom existe déjà
       const existingTeam = await prisma.teams.findUnique({
         where: { name: validatedData.name },
       });
-
       if (existingTeam) {
         return res.status(400).json({ error: "Ce nom d'équipe est déjà utilisé." });
       }
 
-      // Vérifier si le manager existe dans la table Users
-      const managerExists = await prisma.users.findUnique({
-        where: { idUser: parseInt(validatedData.managerId) },
-      });
-
-      if (!managerExists) {
-        return res.status(404).json({ error: "Le manager spécifié n'existe pas." });
-      }
-
-      // Création de l'équipe
+      // Création avec "Nested Writes" pour la table de liaison TeamUser
       const newTeam = await prisma.teams.create({
         data: {
           name: validatedData.name,
           description: validatedData.description,
-          managerId: parseInt(validatedData.managerId),
+          managerId: validatedData.managerId,
+          // Ajout des membres à la volée
           TeamUser: {
-            create: members?.map((userId) => ({
-              // On crée une entrée dans la table de liaison TeamUser
-              // En connectant un utilisateur existant via son idUser
+            create: validatedData.members?.map((userId) => ({
               Users: {
-                connect: { idUser: parseInt(userId) }
+                connect: { idUser: userId }
               }
             }))
           }
         },
-        // On inclut souvent le manager dans la réponse pour confirmer
         include: {
-          Users: true, // Détails du manager
+          Users: true, // Inclut les infos du manager
           TeamUser: {
-            include: {
-              Users: true // Détails des membres ajoutés
-            }
+            include: { Users: true } // Inclut les infos des membres
           }
         }
       });
 
-      res.status(201).json({ team: newTeam });
+      res.status(201).json(newTeam);
     } catch (error) {
       console.error(error);
       res.status(400).json({ error: error.message });
     }
   },
 
-  // Lire toutes les équipes
+  // --- LIRE TOUTES LES ÉQUIPES ---
   async getAllTeams(req, res) {
     try {
       const teams = await prisma.teams.findMany({
-        include: { Users: true } // Optionnel : pour voir les détails du manager
+        include: {
+          Users: true, // Le manager
+          _count: { select: { TeamUser: true } } // Compte le nombre de membres
+        }
       });
       res.status(200).json(teams);
     } catch (error) {
-      res.status(500).json({ error: "Erreur serveur lors de la récupération des équipes." });
+      res.status(500).json({ error: "Erreur lors de la récupération des équipes." });
     }
   },
 
-  // Lire une équipe par ID
+  // --- LIRE UNE ÉQUIPE PAR ID ---
   async getTeamById(req, res) {
     try {
       const { id } = req.params;
       const team = await prisma.teams.findUnique({
         where: { idTeam: parseInt(id) },
         include: { 
-          Users: true,
-          TeamUser: true // Optionnel : pour voir les membres
+          Users: true, // Manager
+          TeamUser: {
+            include: {
+              Users: {
+                select: { idUser: true, firstname: true, lastname: true, email: true }
+              }
+            }
+          }
         }
       });
 
@@ -97,34 +88,57 @@ export default {
     }
   },
 
-  // Mettre à jour une équipe
+  // --- METTRE À JOUR UNE ÉQUIPE ---
   async updateTeam(req, res) {
     try {
       const { id } = req.params;
-      const data = req.body;
+      const { members, ...otherData } = req.body;
 
-      // Si on change le managerId, on s'assure qu'il est au format Int
-      if (data.managerId) data.managerId = parseInt(data.managerId);
+      // Préparation des données de mise à jour
+      const updatePayload = { ...otherData };
+      if (otherData.managerId) updatePayload.managerId = parseInt(otherData.managerId);
+
+      // Si on envoie une nouvelle liste de membres, on synchronise
+      if (members && Array.isArray(members)) {
+        updatePayload.TeamUser = {
+          // 1. On vide les anciens membres de cette équipe
+          deleteMany: {},
+          // 2. On ajoute les nouveaux
+          create: members.map((userId) => ({
+            Users: { connect: { idUser: parseInt(userId) } }
+          }))
+        };
+      }
 
       const updatedTeam = await prisma.teams.update({
         where: { idTeam: parseInt(id) },
-        data: data,
+        data: updatePayload,
+        include: { TeamUser: true }
       });
 
       res.json(updatedTeam);
     } catch (error) {
-      res.status(500).json({ error: "Erreur lors de la mise à jour de l'équipe." });
+      console.error(error);
+      res.status(500).json({ error: "Erreur lors de la mise à jour." });
     }
   },
 
-  // Supprimer une équipe
+  // --- SUPPRIMER UNE ÉQUIPE ---
   async deleteTeam(req, res) {
     try {
       const { id } = req.params;
+
+      // Note: Si vous n'avez pas de Cascade Delete configuré au niveau DB,
+      // il faut d'abord supprimer les entrées dans TeamUser.
+      await prisma.teamUser.deleteMany({
+        where: { teamId: parseInt(id) }
+      });
+
       await prisma.teams.delete({ 
         where: { idTeam: parseInt(id) } 
       });
-      res.json({ message: "Équipe supprimée avec succès." });
+
+      res.json({ message: "Équipe et ses affiliations supprimées." });
     } catch (error) {
       res.status(500).json({ error: "Erreur lors de la suppression." });
     }
