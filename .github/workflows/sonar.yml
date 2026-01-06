@@ -1,0 +1,10 @@
+sonar:
+  projectKey: time-manager_core_a91c2
+  projectName: Time Manager
+  projectVersion: 0.1.3
+
+  sources: .
+  exclusions: |
+    **/node_modules/**
+    **/dist/**
+    **/build/**
