@@ -51,6 +51,27 @@
               <span>Profile</span>
             </div>
           </router-link>
+
+        <li class="nav-item mb-2">
+          <router-link
+            to="/planning"
+            class="nav-link"
+            :class="{ active: isActive('/planning') }"
+          >
+            <div class="d-flex align-items-center gap-3">
+              <!-- Icône calendrier simple (tu peux remplacer) -->
+              <svg class="w-10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 3V5" stroke="#1b93b1" stroke-width="2" stroke-linecap="round"/>
+                <path d="M17 3V5" stroke="#1b93b1" stroke-width="2" stroke-linecap="round"/>
+                <path d="M4 9H20" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+                <path d="M6 7H18C19.1046 7 20 7.89543 20 9V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V9C4 7.89543 4.89543 7 6 7Z" stroke="#000000" stroke-width="2"/>
+              </svg>
+
+              <span>Planning</span>
+            </div>
+          </router-link>
+        </li>
+
         </li>
         <li class="nav-item mb-2">
           <router-link to="/Teams" class="nav-link" :class="{ active: isActive('/Teams') }">
@@ -104,7 +125,6 @@
         <li class="nav-item mb-2"><router-link to="/Profile" class="nav-link">Profile</router-link></li>
         <li class="nav-item mb-2"><router-link to="/Teams" class="nav-link">Teams</router-link></li>
         <li class="nav-item mb-2"><router-link to="/Login" class="nav-link">Logout</router-link></li>
-        <li class="nav-item mb-2"><router-link to="/planning" class="nav-link">My Planning</router-link></li>
       </ul>
     </div>
   </div>
