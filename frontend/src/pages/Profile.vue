@@ -24,8 +24,11 @@
               </button>
             </div>
           </div>
+
           <div class="col-md-9">
-            <h5 class="fw-semibold mb-1">{{ user.firstname }} {{ user.lastname }}</h5>
+            <h5 class="fw-semibold mb-1">
+              {{ user.firstname }} {{ user.lastname }}
+            </h5>
             <p class="text-muted mb-2">{{ user.email }}</p>
             <span class="badge bg-light text-dark border">Member since 2023</span>
           </div>
@@ -35,23 +38,55 @@
       <!-- ================= Account Details ================= -->
       <div class="card shadow-sm p-4 mb-4 border-0 rounded-3">
         <h5 class="fw-semibold mb-3 text-primary">Account Details</h5>
+
         <form @submit.prevent="onSave">
           <div class="row g-3">
             <div class="col-md-6">
-              <label class="form-label">First name</label>
-              <input v-model="user.firstname" type="text" class="form-control" />
+              <label class="form-label" for="profile-firstname">First name</label>
+              <input
+                id="profile-firstname"
+                v-model="user.firstname"
+                name="firstname"
+                type="text"
+                class="form-control"
+                autocomplete="given-name"
+              />
             </div>
+
             <div class="col-md-6">
-              <label class="form-label">Last name</label>
-              <input v-model="user.lastname" type="text" class="form-control" />
+              <label class="form-label" for="profile-lastname">Last name</label>
+              <input
+                id="profile-lastname"
+                v-model="user.lastname"
+                name="lastname"
+                type="text"
+                class="form-control"
+                autocomplete="family-name"
+              />
             </div>
+
             <div class="col-md-6">
-              <label class="form-label">Email</label>
-              <input v-model="user.email" type="email" class="form-control" />
+              <label class="form-label" for="profile-email">Email</label>
+              <input
+                id="profile-email"
+                v-model="user.email"
+                name="email"
+                type="email"
+                class="form-control"
+                autocomplete="email"
+              />
             </div>
+
             <div class="col-md-6">
-              <label class="form-label">Phone number</label>
-              <input v-model="user.phone" type="tel" class="form-control" />
+              <label class="form-label" for="profile-phone">Phone number</label>
+              <input
+                id="profile-phone"
+                v-model="user.phone"
+                name="phone"
+                type="tel"
+                class="form-control"
+                autocomplete="tel"
+              />
             </div>
           </div>
         </form>
@@ -60,23 +95,34 @@
       <!-- ================= Security Settings ================= -->
       <div class="card shadow-sm p-4 border-0 rounded-3">
         <h5 class="fw-semibold mb-3 text-danger">Security Settings</h5>
-        <p class="text-muted small mb-4">
-          Manage your password and account access.
-        </p>
+        <p class="text-muted small mb-4">Manage your password and account access.</p>
 
         <div class="row g-3 align-items-center">
           <div class="col-md-6">
-            <label class="form-label">Current password</label>
-            <input type="password" class="form-control" placeholder="********" />
+            <label class="form-label" for="profile-current-password">Current password</label>
+            <input
+              id="profile-current-password"
+              type="password"
+              class="form-control"
+              placeholder="********"
+              autocomplete="current-password"
+            />
           </div>
+
           <div class="col-md-6">
-            <label class="form-label">New password</label>
-            <input type="password" class="form-control" placeholder="********" />
+            <label class="form-label" for="profile-new-password">New password</label>
+            <input
+              id="profile-new-password"
+              type="password"
+              class="form-control"
+              placeholder="********"
+              autocomplete="new-password"
+            />
           </div>
         </div>
 
         <div class="d-flex justify-content-end mt-4">
-          <button class="btn btn-danger px-4">Update password</button>
+          <button type="button" class="btn btn-danger px-4">Update password</button>
         </div>
       </div>
     </section>
@@ -92,15 +138,16 @@ const user = ref({
   email: '',
   phone: ''
 })
+
 const avatar = ref('/vite.svg')
 
 onMounted(() => {
-  const storedUser = JSON.parse(localStorage.getItem("user"))
+  const storedUser = JSON.parse(localStorage.getItem('user'))
   if (storedUser) {
     user.value = storedUser
     if (storedUser.avatar) avatar.value = storedUser.avatar
   } else {
-    console.warn("Aucun utilisateur trouvé dans le localStorage")
+    console.warn('Aucun utilisateur trouvé dans le localStorage')
   }
 })
 
@@ -109,11 +156,10 @@ function onEditAvatar() {
 }
 
 function onSave() {
-  localStorage.setItem("user", JSON.stringify(user.value))
+  localStorage.setItem('user', JSON.stringify(user.value))
   alert('Saved successfully! (demo)')
 }
 </script>
-
 
 <style scoped>
 /* General Layout */
@@ -132,6 +178,7 @@ function onSave() {
   background-color: #f8f9fa;
   transition: transform 0.3s ease;
 }
+
 .profile-avatar:hover {
   transform: scale(1.03);
 }
