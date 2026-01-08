@@ -16,6 +16,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { api } from "../services/api";
 
 // données
 const clocks = ref([]);
@@ -23,8 +24,8 @@ const clocks = ref([]);
 // récupère les clocks pour l'utilisateur courant
 const fetchClocksByUser = async (userId) => {
   try {
-    const response = await fetch(`http://127.0.0.1:3000/clocks/user/${userId}`);
-    const data = await response.json();
+    const response = await api.get(`clocks/user/${userId}`);
+    const data = response.data;
     clocks.value = data || [];
   } catch (err) {
     console.error('Erreur fetch clocks:', err);

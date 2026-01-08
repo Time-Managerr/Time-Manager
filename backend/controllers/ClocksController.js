@@ -37,7 +37,7 @@ export default {
 
     // Vérifie si le pointage existe
     const existingClock = await prisma.clocks.findUnique({
-      where: { idClock: parseInt(idClock) },
+      where: { idClock: Number.parseInt(idClock) },
     });
 
     if (!existingClock) {
@@ -51,7 +51,7 @@ export default {
 
     // Mise à jour du pointage
     const updatedClock = await prisma.clocks.update({
-      where: { idClock: parseInt(idClock) },
+      where: { idClock: Number.parseInt(idClock) },
       data: {
         clockOut: validatedData.clockOut,
         hoursWorked: hoursWorked,
@@ -82,9 +82,9 @@ export default {
   async getClockByIdUser(req, res) {
   try {
     const { userId } = req.params;
-    const parseId = parseInt(userId);
+    const parseId = Number.parseInt(userId);
 
-    if (isNaN(parseId)) {
+    if (Number.isNaN(parseId)) {
       return res.status(400).json({ error: "ID utilisateur invalide." });
     }
 

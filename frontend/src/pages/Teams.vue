@@ -4,13 +4,6 @@
       <!-- ===== HEADER ===== -->
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold">Teams</h4>
-        <div class="d-flex align-items-center gap-2">
-          <span class="text-muted small">Role:</span>
-          <select v-model="userRole" class="form-select form-select-sm w-auto">
-            <option value="manager">Manager</option>
-            <option value="employee">Employee</option>
-          </select>
-        </div>
       </div>
 
       <!-- ===== MAIN CARD ===== -->
@@ -204,10 +197,10 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 
 /* ==== STATE ==== */
-const userRole = ref('manager') // "manager" | "employee"
+const user = ref(null)
 const selectedTeam = ref(null)
 const selectedMemberPlanning = ref(null)
 const selectedMemberView = ref(null)
@@ -215,6 +208,18 @@ const selectedMemberEdit = ref(null)
 
 const editForm = reactive({ name: '', role: '', email: '', phone: '' })
 const workDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+
+onMounted(() => {
+  const storedUser = JSON.parse(localStorage.getItem('user'))
+  if (!storedUser) {
+    console.error('No authenticated user found')
+    return
+  }
+  user.value = storedUser;
+})
+
+const userRole = computed(() => user.value?.profile)
+const isManager = computed(() => userRole.value === 'manager')
 
 /* ==== DATA ==== */
 const teams = ref([
@@ -486,7 +491,7 @@ const closePlanningPopup = () => (selectedMemberPlanning.value = null)
 const openViewMemberPopup = (member) => (selectedMemberView.value = member)
 const closeViewMemberPopup = () => (selectedMemberView.value = null)
 const openEditMemberPopup = (member) => {
-  if (userRole.value !== 'manager') return alert("You don't have permission to edit this member.")
+  if (!isManager(userRole.value)) return alert("You don't have permission to edit this member.")
   selectedMemberEdit.value = member
   Object.assign(editForm, member)
 }

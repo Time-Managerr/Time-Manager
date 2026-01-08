@@ -35,7 +35,7 @@ app.use("/auth", authRoutes);
 app.use("/clocks", clocksRoutes);
 app.use("/teams", teamsRoutes);
 
-app.listen(PORT || 3000, () => {
+app.listen(PORT || 3000, '0.0.0.0', () => {
   console.log(`API running on port ${PORT || 3000}`);
 });
 
