@@ -64,6 +64,7 @@
                 <button
                   v-if="userRole === 'manager'"
                   class="btn btn-sm btn-outline-danger px-3"
+                  @click="deleteTeam(team)"
                 >
                   Remove
                 </button>
@@ -116,6 +117,12 @@
                     @click="openPlanningPopup(member)"
                   >
                     📅 Planning
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-secondary action-btn"
+                    @click="openEditMemberPopup(member)"
+                  >
+                    ✏️ Edit
                   </button>
                 </template>
                 <button
@@ -256,6 +263,20 @@ const openPlanningPopup = (member) => {
 
 const closePlanningPopup = () => {
   selectedMemberPlanning.value = null;
+};
+
+const deleteTeam = async (team) => {
+  if (confirm(`Êtes-vous sûr de vouloir supprimer l'équipe "${team.name}" ?`)) {
+    try {
+      await teamsService.deleteTeam(team.id);
+      // Rafraîchir la liste des équipes
+      await fetchTeams();
+      alert('Équipe supprimée avec succès !');
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      alert('Erreur lors de la suppression de l\'équipe.');
+    }
+  }
 };
 
 const saveMemberChanges = () => {
