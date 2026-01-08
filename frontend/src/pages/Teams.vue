@@ -4,13 +4,6 @@
       <!-- ===== HEADER ===== -->
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold">Teams</h4>
-        <div class="d-flex align-items-center gap-2">
-          <span class="text-muted small">Role:</span>
-          <select v-model="userRole" class="form-select form-select-sm w-auto">
-            <option value="manager">Manager</option>
-            <option value="employee">Employee</option>
-          </select>
-        </div>
       </div>
 
       <!-- ===== MAIN CARD ===== -->
