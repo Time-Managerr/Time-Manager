@@ -117,12 +117,6 @@
                   >
                     📅 Planning
                   </button>
-                  <button
-                    class="btn btn-sm btn-outline-secondary action-btn"
-                    @click="openEditMemberPopup(member)"
-                  >
-                    ✏️ Edit
-                  </button>
                 </template>
                 <button
                   class="btn btn-sm btn-outline-secondary action-btn"
@@ -204,298 +198,76 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, onMounted } from 'vue';
+import teamsService from '../services/teamsService.js';
 
-/* ==== STATE ==== */
-const userRole = ref('manager') // "manager" | "employee"
-const selectedTeam = ref(null)
-const selectedMemberPlanning = ref(null)
-const selectedMemberView = ref(null)
-const selectedMemberEdit = ref(null)
+// Données réactives
+const teams = ref([]);
+const userRole = ref('employee'); // ou 'manager'
+const selectedTeam = ref(null);
+const selectedMemberView = ref(null);
+const selectedMemberEdit = ref(null);
+const selectedMemberPlanning = ref(null);
+const editForm = ref({});
 
-const editForm = reactive({ name: '', role: '', email: '', phone: '' })
-const workDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+// Récupérer les équipes de l'utilisateur connecté
+const fetchTeams = async () => {
+  try {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user && user.id) {
+      const data = await teamsService.getTeamsByUserId(user.id);
+      teams.value = data;
+    }
+  } catch (error) {
+    console.error('Erreur lors de la récupération des équipes:', error);
+  }
+};
 
-/* ==== DATA ==== */
-const teams = ref([
-  {
-    name: 'Development Team',
-    description: 'Responsible for coding, testing, and deploying features.',
-    members: [
-      {
-        name: 'Alice Martin',
-        role: 'Frontend Developer',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'alice.martin@example.com',
-        phone: '+33 6 12 34 56 78'
-      },
-      {
-        name: 'Lucas Bernard',
-        role: 'Backend Developer',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'lucas.bernard@example.com',
-        phone: '+33 6 87 65 43 21'
-      },
-     {
-        name: 'Lucas Bernard',
-        role: 'Backend Developer',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'lucas.bernard@example.com',
-        phone: '+33 6 87 65 43 21'
-      }, 
-      {
-        name: 'Lucas Bernard',
-        role: 'Backend Developer',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'lucas.bernard@example.com',
-        phone: '+33 6 87 65 43 21'
-      },
-      {
-        name: 'Lucas Bernard',
-        role: 'Backend Developer',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'lucas.bernard@example.com',
-        phone: '+33 6 87 65 43 21'
-      },  
-      {
-        name: 'Lucas Bernard',
-        role: 'Backend Developer',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'lucas.bernard@example.com',
-        phone: '+33 6 87 65 43 21'
-      },
-     {
-        name: 'Lucas Bernard',
-        role: 'Backend Developer',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'lucas.bernard@example.com',
-        phone: '+33 6 87 65 43 21'
-      },
-      {
-        name: 'Lucas Bernard',
-        role: 'Backend Developer',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'lucas.bernard@example.com',
-        phone: '+33 6 87 65 43 21'
-      },
-      {
-        name: 'Lucas Bernard',
-        role: 'Backend Developer',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'lucas.bernard@example.com',
-        phone: '+33 6 87 65 43 21'
-      },
-      {
-        name: 'Lucas Bernard',
-        role: 'Backend Developer',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'lucas.bernard@example.com',
-        phone: '+33 6 87 65 43 21'
-      },
-      {
-        name: 'Lucas Bernard',
-        role: 'Backend Developer',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'lucas.bernard@example.com',
-        phone: '+33 6 87 65 43 21'
-      },
-      {
-        name: 'Lucas Bernard',
-        role: 'Backend Developer',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'lucas.bernard@example.com',
-        phone: '+33 6 87 65 43 21'
-      },
-      {
-        name: 'Lucas Bernard',
-        role: 'Backend Developer',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'lucas.bernard@example.com',
-        phone: '+33 6 87 65 43 21'
-      },
-      {
-        name: 'Lucas Bernard',
-        role: 'Backend Developer',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'lucas.bernard@example.com',
-        phone: '+33 6 87 65 43 21'
-      },
-      {
-        name: 'Lucas Bernard',
-        role: 'Backend Developer',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'lucas.bernard@example.com',
-        phone: '+33 6 87 65 43 21'
-      }
-    ]
-  },
-  {
-    name: 'Design Team',
-    description: 'Creates the visual identity and UX/UI designs for projects.',
-    members: [
-      {
-        name: 'Nina Collin',
-        role: 'UI Designer',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'nina.collin@example.com',
-        phone: '+33 6 98 76 54 32'
-      },
-      {
-        name: 'Hugo Martin',
-        role: 'UX Researcher',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'hugo.martin@example.com',
-        phone: '+33 6 22 44 66 88'
-      }
-    ]
-  },
-  {
-    name: 'Marketing Team',
-    description: 'Drives product awareness and digital campaigns.',
-    members: [
-      {
-        name: 'Kevin Dubois',
-        role: 'Marketing Lead',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'kevin.dubois@example.com',
-        phone: '+33 6 55 66 77 88'
-      },
-      {
-        name: 'Emma Roux',
-        role: 'Community Manager',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'emma.roux@example.com',
-        phone: '+33 6 33 44 55 66'
-      }
-    ]
-  },
+// Gestion des popups
+const openManagePopup = (team) => {
+  selectedTeam.value = team;
+};
 
-    {
-    name: 'Design Team',
-    description: 'Creates the visual identity and UX/UI designs for projects.',
-    members: [
-      {
-        name: 'Nina Collin',
-        role: 'UI Designer',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'nina.collin@example.com',
-        phone: '+33 6 98 76 54 32'
-      },
-      {
-        name: 'Hugo Martin',
-        role: 'UX Researcher',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'hugo.martin@example.com',
-        phone: '+33 6 22 44 66 88'
-      }
-    ]
-  },
+const closeManagePopup = () => {
+  selectedTeam.value = null;
+};
 
-  {
-    name: 'Design Team',
-    description: 'Creates the visual identity and UX/UI designs for projects.',
-    members: [
-      {
-        name: 'Nina Collin',
-        role: 'UI Designer',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'nina.collin@example.com',
-        phone: '+33 6 98 76 54 32'
-      },
-      {
-        name: 'Hugo Martin',
-        role: 'UX Researcher',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'hugo.martin@example.com',
-        phone: '+33 6 22 44 66 88'
-      }
-    ]
-  },  {
-    name: 'Design Team',
-    description: 'Creates the visual identity and UX/UI designs for projects.',
-    members: [
-      {
-        name: 'Nina Collin',
-        role: 'UI Designer',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'nina.collin@example.com',
-        phone: '+33 6 98 76 54 32'
-      },
-      {
-        name: 'Hugo Martin',
-        role: 'UX Researcher',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'hugo.martin@example.com',
-        phone: '+33 6 22 44 66 88'
-      }
-    ]
-  },  {
-    name: 'Design Team',
-    description: 'Creates the visual identity and UX/UI designs for projects.',
-    members: [
-      {
-        name: 'Nina Collin',
-        role: 'UI Designer',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'nina.collin@example.com',
-        phone: '+33 6 98 76 54 32'
-      },
-      {
-        name: 'Hugo Martin',
-        role: 'UX Researcher',
-        avatar: '/vite.svg',
-        date: '2023/09/17',
-        email: 'hugo.martin@example.com',
-        phone: '+33 6 22 44 66 88'
-      }
-    ]
-  },
-])
+const openViewMemberPopup = (member) => {
+  selectedMemberView.value = member;
+};
 
-/* ==== METHODS ==== */
-const openManagePopup = (team) => (selectedTeam.value = team)
-const closeManagePopup = () => (selectedTeam.value = null)
-const openPlanningPopup = (member) => (selectedMemberPlanning.value = member)
-const closePlanningPopup = () => (selectedMemberPlanning.value = null)
-const openViewMemberPopup = (member) => (selectedMemberView.value = member)
-const closeViewMemberPopup = () => (selectedMemberView.value = null)
+const closeViewMemberPopup = () => {
+  selectedMemberView.value = null;
+};
+
 const openEditMemberPopup = (member) => {
-  if (userRole.value !== 'manager') return alert("You don't have permission to edit this member.")
-  selectedMemberEdit.value = member
-  Object.assign(editForm, member)
-}
-const closeEditMemberPopup = () => (selectedMemberEdit.value = null)
+  selectedMemberEdit.value = member;
+  editForm.value = { ...member }; // Copier les données pour édition
+};
+
+const closeEditMemberPopup = () => {
+  selectedMemberEdit.value = null;
+  editForm.value = {};
+};
+
+const openPlanningPopup = (member) => {
+  selectedMemberPlanning.value = member;
+};
+
+const closePlanningPopup = () => {
+  selectedMemberPlanning.value = null;
+};
+
 const saveMemberChanges = () => {
-  Object.assign(selectedMemberEdit.value, editForm)
-  closeEditMemberPopup()
-  alert('✅ Member information updated successfully.')
-}
+  // TODO: implémenter la sauvegarde
+  console.log('Sauvegarder les changements:', editForm.value);
+  closeEditMemberPopup();
+};
+
+// Charger les données au montage du composant
+onMounted(() => {
+  fetchTeams();
+});
 </script>
 
 <style scoped>
@@ -588,3 +360,4 @@ const saveMemberChanges = () => {
   padding: 1rem 1.25rem;
 }
 </style>
+
