@@ -51,6 +51,12 @@ class Team {
     return response.data;
     }
 
+// Récupérer tous les utilisateurs
+    async getAllUsers() {
+  const response = await api.get("/users");
+  return response.data;
+    }
+
 // Mettre à jour une team précis
     async updateTeam(idTeam, updates) {
   const response = await api.put(`/teams/${idTeam}`, updates);

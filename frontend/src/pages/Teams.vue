@@ -4,6 +4,15 @@
       <!-- ===== HEADER ===== -->
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold">Teams</h4>
+        <div class="d-flex align-items-center gap-3">
+          <button
+            v-if="userRole === 'manager'"
+            class="btn btn-sm btn-primary"
+            @click="openCreateTeamPopup"
+          >
+            ➕ Create Team
+          </button>
+        </div>
       </div>
 
       <!-- ===== MAIN CARD ===== -->
@@ -172,6 +181,69 @@
       </div>
     </div>
 
+    <!-- ===== POPUP: CREATE TEAM ===== -->
+    <div v-if="showCreateTeamPopup" class="popup-backdrop" @click.self="closeCreateTeamPopup">
+      <div class="popup-content smaller">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h5 class="fw-bold text-primary mb-0">➕ Create New Team</h5>
+          <button class="btn btn-light btn-sm" @click="closeCreateTeamPopup">✖</button>
+        </div>
+
+        <form @submit.prevent="submitCreateTeam">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Team Name</label>
+            <input
+              v-model="newTeamForm.name"
+              type="text"
+              class="form-control"
+              placeholder="Enter team name"
+              required
+            />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Description</label>
+            <textarea
+              v-model="newTeamForm.description"
+              class="form-control"
+              rows="3"
+              placeholder="Enter team description (optional)"
+            ></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Add Members</label>
+            <small class="text-muted d-block mb-2">Select users to add to the team</small>
+            <div class="border p-3 rounded" style="max-height: 250px; overflow-y: auto;">
+              <div v-if="allUsers.length === 0" class="text-muted small text-center py-3">
+                No users available
+              </div>
+              <div v-for="user in allUsers" :key="user.id" class="form-check mb-2">
+                <input
+                  :id="`user-${user.id}`"
+                  v-model="user.selected"
+                  type="checkbox"
+                  class="form-check-input"
+                />
+                <label :for="`user-${user.id}`" class="form-check-label">
+                  <span class="fw-medium">{{ user.name }}</span>
+                  <br />
+                  <small class="text-muted">{{ user.email }} • {{ user.profile }}</small>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-end gap-2 d-flex justify-content-end">
+            <button type="button" class="btn btn-secondary btn-sm" @click="closeCreateTeamPopup">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary btn-sm">Create Team</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- ===== POPUP: EDIT MEMBER ===== -->
     <div v-if="selectedMemberEdit" class="popup-backdrop" @click.self="closeEditMemberPopup">
       <div class="popup-content smaller">
@@ -203,18 +275,28 @@ import teamsService from '../services/teamsService.js';
 
 // Données réactives
 const teams = ref([]);
-const userRole = ref('employee'); // ou 'manager'
+const userRole = ref('employee'); // Défini dynamiquement dans fetchTeams() selon user.profile
 const selectedTeam = ref(null);
 const selectedMemberView = ref(null);
 const selectedMemberEdit = ref(null);
 const selectedMemberPlanning = ref(null);
 const editForm = ref({});
+const showCreateTeamPopup = ref(false);
+const allUsers = ref([]);
+const newTeamForm = ref({
+  name: '',
+  description: '',
+  members: []
+});
 
 // Récupérer les équipes de l'utilisateur connecté
 const fetchTeams = async () => {
   try {
     const user = JSON.parse(localStorage.getItem('user'));
     if (user && user.id) {
+      // Définir le rôle en fonction du profil
+      userRole.value = user.profile === 'Manager' ? 'manager' : 'employee';
+
       const data = await teamsService.getTeamsByUserId(user.id);
       teams.value = data;
     }
@@ -276,6 +358,74 @@ const saveMemberChanges = () => {
   // TODO: implémenter la sauvegarde
   console.log('Sauvegarder les changements:', editForm.value);
   closeEditMemberPopup();
+};
+
+const openCreateTeamPopup = () => {
+  showCreateTeamPopup.value = true;
+  newTeamForm.value = { name: '', description: '', members: [] };
+  // Charger la liste des utilisateurs
+  fetchAllUsers();
+};
+
+const fetchAllUsers = async () => {
+  try {
+    const users = await teamsService.getAllUsers();
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+    // Afficher tous les utilisateurs sauf l'utilisateur connecté
+    allUsers.value = users
+      .filter(u => u.idUser !== currentUser.id)
+      .map(u => ({
+        id: u.idUser,
+        name: `${u.firstname} ${u.lastname}`,
+        email: u.email,
+        profile: u.profile,
+        selected: false
+      }));
+  } catch (error) {
+    console.error('Erreur lors de la récupération des utilisateurs:', error);
+  }
+};
+
+const closeCreateTeamPopup = () => {
+  showCreateTeamPopup.value = false;
+  newTeamForm.value = { name: '', description: '', members: [] };
+};
+
+const submitCreateTeam = async () => {
+  try {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user || !user.id) {
+      alert('User not found');
+      return;
+    }
+
+    // Récupérer les IDs des utilisateurs sélectionnés
+    const selectedMemberIds = allUsers.value
+      .filter(u => u.selected)
+      .map(u => u.id);
+
+    const teamData = {
+      name: newTeamForm.value.name,
+      description: newTeamForm.value.description,
+      managerId: user.id,
+      members: selectedMemberIds
+    };
+
+    await teamsService.createTeam(
+      teamData.name,
+      teamData.description,
+      teamData.managerId,
+      teamData.members
+    );
+
+    alert('Team created successfully!');
+    closeCreateTeamPopup();
+    // Rafraîchir la liste des équipes
+    await fetchTeams();
+  } catch (error) {
+    console.error('Erreur lors de la création:', error);
+    alert('Error creating team: ' + error.message);
+  }
 };
 
 // Charger les données au montage du composant
