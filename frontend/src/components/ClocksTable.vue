@@ -10,7 +10,7 @@ const getDate = (dateString) => {
   if (!dateString) return '—';
   try {
     const date = new Date(dateString);
-    if (isNaN(date)) return '—';
+    if (Number.isNaN(date)) return '—';
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-indexed
     const year = date.getFullYear();
@@ -61,14 +61,14 @@ const calculateHoursWorked = (clockIn, clockOut) => {
 
   const start = new Date(clockIn);
   const end = new Date(clockOut);
-  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) return 0;
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) return 0;
 
   const diffMs = end - start;
   return diffMs / 3600000; // decimal hours
 };
 
 const formatHoursWorkedSimple = (decimalHours) => {
-  if (typeof decimalHours !== 'number' || isNaN(decimalHours)) return '0h00';
+  if (typeof decimalHours !== 'number' || Number.isNaN(decimalHours)) return '0h00';
 
   const totalMinutes = Math.floor(decimalHours * 60);
   const hours = Math.floor(totalMinutes / 60);

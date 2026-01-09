@@ -14,7 +14,7 @@ const ClocksValidator = z.object({
       required_error: "L'heure de début (clockIn) est requise",
       invalid_type_error: "L'heure de début doit être une date valide",
     })
-    .refine((val) => !isNaN(Date.parse(val)), {
+    .refine((val) => !Number.isNaN(Date.parse(val)), {
       message: "L'heure de début doit être une date ISO valide",
     })
     .transform((val) => new Date(val)),
@@ -24,7 +24,7 @@ const ClocksValidator = z.object({
       invalid_type_error: "L'heure de fin (clockOut) doit être une date valide",
     })
     .optional()
-    .refine((val) => !val || !isNaN(Date.parse(val)), {
+    .refine((val) => !val || !Number.isNaN(Date.parse(val)), {
       message: "L'heure de fin doit être une date ISO valide",
     })
     .transform((val) => (val ? new Date(val) : null)),

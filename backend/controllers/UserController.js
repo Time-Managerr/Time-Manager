@@ -29,7 +29,7 @@ export default {
           lastname: validatedUser.lastname,
           email: validatedUser.email,
           password: hashedPassword,
-          phone: parseInt(validatedUser.phone),
+          phone: Number.parseInt(validatedUser.phone),
           profile: validatedUser.profile,
         },
       });
@@ -56,7 +56,7 @@ export default {
     try {
       const { id } = req.params;
       const user = await prisma.users.findUnique({
-        where: { idUser: parseInt(id) },
+        where: { idUser: Number.parseInt(id) },
       });
       if (!user) return res.status(404).json({ error: "Utilisateur introuvable." });
       res.json(user);
@@ -75,7 +75,7 @@ export default {
       if (password) updatedData.password = await bcrypt.hash(password, 10);
 
       const updatedUser = await prisma.users.update({
-        where: { idUser: parseInt(id) },
+        where: { idUser: Number.parseInt(id) },
         data: updatedData,
       });
 
@@ -89,7 +89,7 @@ export default {
   async deleteUser(req, res) {
     try {
       const { id } = req.params;
-      await prisma.users.delete({ where: { idUser: parseInt(id) } });
+      await prisma.users.delete({ where: { idUser: Number.parseInt(id) } });
       res.json({ message: "Utilisateur supprimé avec succès." });
     } catch (error) {
       res.status(500).json({ error: "Erreur lors de la suppression." });
