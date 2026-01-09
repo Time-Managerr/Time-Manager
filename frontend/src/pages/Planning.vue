@@ -80,30 +80,24 @@
         <h5 class="fw-bold">Teams</h5>
 
         <div class="team-list">
-          <div class="team-block">
+          <div v-if="userTeams.length === 0" class="text-muted small p-3 text-center">
+            No teams yet
+          </div>
+          
+          <div v-for="team in userTeams" :key="team.id" class="team-block">
             <details open>
-              <summary>Teams 1</summary>
+              <summary>{{ team.name }}</summary>
 
-              <div class="team-member">
-                <img src="/vite.svg" class="avatar-sm" />
-                <span>John Doe</span>
-                <span class="status red"></span>
+              <div v-if="team.members.length === 0" class="text-muted small px-3 py-2">
+                No members
               </div>
 
-              <div class="team-member">
-                <img src="/vite.svg" class="avatar-sm" />
-                <span>John Doe</span>
+              <div v-for="member in team.members" :key="member.id" class="team-member">
+                <img :src="member.avatar" class="avatar-sm" />
+                <span>{{ member.name }}</span>
                 <span class="status green"></span>
               </div>
             </details>
-          </div>
-
-          <div class="team-block">
-            <details><summary>Teams 2</summary></details>
-          </div>
-
-          <div class="team-block">
-            <details><summary>Teams 3</summary></details>
           </div>
         </div>
       </div>
@@ -113,6 +107,7 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from "vue";
+import teamsService from "../services/teamsService.js";
 
 // --- Date/heure ---
 const now = ref(new Date());
@@ -122,6 +117,9 @@ onMounted(() => {
   timerId = setInterval(() => {
     now.value = new Date();
   }, 1000);
+  
+  // Charger les teams
+  fetchUserTeams();
 });
 
 onUnmounted(() => clearInterval(timerId));
@@ -142,6 +140,21 @@ const currentTime = computed(() =>
     second: "2-digit",
   })
 );
+
+// --- Teams et membres ---
+const userTeams = ref([]);
+
+const fetchUserTeams = async () => {
+  try {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user && user.id) {
+      const teams = await teamsService.getTeamsByUserId(user.id);
+      userTeams.value = teams;
+    }
+  } catch (error) {
+    console.error('Erreur lors de la récupération des teams:', error);
+  }
+};
 
 // --- Jours/heures ---
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
