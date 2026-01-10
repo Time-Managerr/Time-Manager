@@ -74,7 +74,7 @@ export default {
           TeamUser: {
             include: {
               Users: {
-                select: { idUser: true, firstname: true, lastname: true, email: true }
+                select: { idUser: true, firstname: true, lastname: true, email: true, phone: true, profile: true }
               }
             }
           }
@@ -85,6 +85,59 @@ export default {
       res.json(team);
     } catch (error) {
       res.status(500).json({ error: "Erreur serveur." });
+    }
+  },
+
+  // --- LIRE LES ÉQUIPES D'UN UTILISATEUR ---
+  async getTeamByUserId(req, res) {
+    try {
+      const { userId } = req.params;
+      const userIdInt = parseInt(userId);
+
+      // Récupérer les équipes où l'utilisateur est manager
+      const teamsAsManager = await prisma.teams.findMany({
+        where: { managerId: userIdInt },
+        include: {
+          Users: true, // Manager
+          TeamUser: {
+            include: {
+              Users: {
+                select: { idUser: true, firstname: true, lastname: true, email: true, phone: true, profile: true }
+              }
+            }
+          }
+        }
+      });
+
+      // Récupérer les équipes où l'utilisateur est membre
+      const teamsAsMember = await prisma.teams.findMany({
+        where: {
+          TeamUser: {
+            some: { userId: userIdInt }
+          }
+        },
+        include: {
+          Users: true, // Manager
+          TeamUser: {
+            include: {
+              Users: {
+                select: { idUser: true, firstname: true, lastname: true, email: true, phone: true, profile: true }
+              }
+            }
+          }
+        }
+      });
+
+      // Fusionner et supprimer les doublons (si manager et membre de la même équipe)
+      const allTeams = [...teamsAsManager, ...teamsAsMember];
+      const uniqueTeams = allTeams.filter((team, index, self) =>
+        index === self.findIndex(t => t.idTeam === team.idTeam)
+      );
+
+      res.json(uniqueTeams);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Erreur lors de la récupération des équipes de l'utilisateur." });
     }
   },
 

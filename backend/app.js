@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import userRoutes from "./routes/Users.js";
 import authRoutes from "./routes/Auth.js";
 import clocksRoutes from "./routes/Clocks.js";
+import planningRoutes from "./routes/Planning.js";
 import teamsRoutes from "./routes/Teams.js";
 import { setupSwagger } from './config/swagger.js';
 
@@ -21,7 +22,7 @@ const corsOptions = {
   preflightContinue: false,
   optionsSuccessStatus: 204,
 };
-
+      
 app.use((req, res, next) => {
   console.log("Nouvelle requête :", req.method, req.url);
   next();
@@ -33,6 +34,7 @@ app.use(express.json());
 app.use("/users", userRoutes);
 app.use("/auth", authRoutes);
 app.use("/clocks", clocksRoutes);
+app.use("/planning", planningRoutes);
 app.use("/teams", teamsRoutes);
 
 app.listen(PORT || 3000, '0.0.0.0', () => {

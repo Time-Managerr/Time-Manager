@@ -1,14 +1,16 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router' 
 import Dashboard from '../pages/Dashboard.vue'
 import Login from '../pages/Login.vue'
 import Profile from '../pages/Profile.vue'
 import Teams from '../pages/Teams.vue'
+import Planning from '../pages/Planning.vue'
 
 const routes = [
   { path: '/', component: Dashboard, meta: { requiresAuth: true } },
   { path: '/profile', component: Profile, meta: { requiresAuth: true } },
   { path: '/teams', component: Teams, meta: { requiresAuth: true } },
   { path: '/login', component: Login },
+  { path: '/planning', component: Planning },
 ]
 
 const router = createRouter({
