@@ -507,15 +507,20 @@ const openPlanningPopup = async (member) => {
   try {
     const templates = await planningService.getByUserId(member.id);
 
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    // Backend stores dayOfWeek with Monday=1..Friday=5 (0 is Sunday). Map to UI Monday=0..Sunday=6.
+    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     const planningsByDay = templates
-      .map(t => ({
-        idPlanning: t.idPlanning,
-        dayOfWeek: t.dayOfWeek,
-        dayName: dayNames[t.dayOfWeek],
-        timeStart: timeFromISO(t.startTime),
-        timeEnd: timeFromISO(t.endTime)
-      }))
+      .map(t => {
+        const raw = t.dayOfWeek ?? 0;
+        const mappedDay = (raw + 6) % 7; // convert: 1->0 (Mon), 2->1, ..., 5->4, 0->6 (Sun)
+        return {
+          idPlanning: t.idPlanning,
+          dayOfWeek: mappedDay,
+          dayName: dayNames[mappedDay],
+          timeStart: timeFromISO(t.startTime),
+          timeEnd: timeFromISO(t.endTime)
+        };
+      })
       .sort((a, b) => a.dayOfWeek - b.dayOfWeek);
 
     selectedMemberPlanning.value = {
@@ -537,7 +542,9 @@ const timeFromISO = (iso) => {
   if (!iso) return '09:00';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '09:00';
-  return d.toISOString().slice(11, 16);
+  const hours = String(d.getUTCHours()).padStart(2, '0');
+  const minutes = String(d.getUTCMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
 };
 
 const savePlanningsChanges = async () => {
