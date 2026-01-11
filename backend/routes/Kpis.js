@@ -9,7 +9,6 @@ router.get('/', verifyToken, KpiController.listKpis);
 router.get('/:id/results', verifyToken, KpiController.getKpiResults);
 // Ad-hoc compute endpoint (does not persist)
 router.post('/compute', verifyToken, (req, res, next) => {
-  console.log('*** /kpis/compute route HIT ***', { body: req.body, user: req.user });
   return KpiController.computeAdHoc(req, res, next);
 });
 // route reserved for future server-side PDF export (currently returns same JSON)

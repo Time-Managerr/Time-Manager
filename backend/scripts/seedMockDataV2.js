@@ -95,37 +95,30 @@ async function main() {
   const allUsers = [admin, ...teamsData.flatMap(t => [t.manager, ...t.employees])];
   const allEmployees = teamsData.flatMap(t => [t.manager, ...t.employees]);
 
-  // Step 3: Create plannings (Mon-Fri, 09:00-17:00) for December 2025 to January 9, 2026
+  // Step 3: Create template plannings (Mon-Fri, 09:00-17:00) for all users
   const allPlannings = [];
-  const monday = new Date();
-  monday.setDate(monday.getDate() - monday.getDay() + 1);
-
   for (const u of allUsers) {
     if (u.profile === 'admin') continue;
     
-    // Create plannings for Dec 1 - Jan 9
-    const startPlan = new Date('2025-12-01');
-    const endPlan = new Date('2026-01-09');
-    let currentPlan = new Date(startPlan);
-    
-    while (currentPlan <= endPlan) {
-      const dayOfWeek = currentPlan.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Skip weekends
-        const dateOnly = new Date(Date.UTC(currentPlan.getUTCFullYear(), currentPlan.getUTCMonth(), currentPlan.getUTCDate()));
-        const startTime = new Date(dateOnly.getTime()); 
-        startTime.setUTCHours(9, 0, 0, 0);
-        const endTime = new Date(dateOnly.getTime()); 
-        endTime.setUTCHours(17, 0, 0, 0);
-        
-        const planning = await prisma.plannings.create({ 
-          data: { userId: u.idUser, date: dateOnly, startTime, endTime } 
-        });
-        allPlannings.push(planning);
-      }
-      currentPlan.setDate(currentPlan.getDate() + 1);
+    // Create templates for Monday-Friday (dayOfWeek 0-4)
+    for (let dayOfWeek = 0; dayOfWeek < 5; dayOfWeek++) {
+      const startTime = new Date('1970-01-01T09:00:00Z');
+      const endTime = new Date('1970-01-01T17:00:00Z');
+      
+      const planning = await prisma.plannings.create({ 
+        data: { 
+          userId: u.idUser, 
+          isTemplate: true,
+          dayOfWeek,
+          date: null,
+          startTime, 
+          endTime 
+        } 
+      });
+      allPlannings.push(planning);
     }
   }
-  console.log(`Created plannings (Dec 1 - Jan 9, Mon-Fri 09:00-17:00) for all users`);
+  console.log(`Created template plannings (Mon-Fri 09:00-17:00) for all users`);
 
   // Step 4: Generate realistic clock entries with employee behavior profiles
   console.log('Generating realistic clock entries with varied employee profiles...');
@@ -160,24 +153,31 @@ async function main() {
   let currentDate = new Date(startGenDate);
   
   while (currentDate <= endGenDate) {
-    const dayOfWeek = currentDate.getDay();
+    const dayOfWeek = (currentDate.getDay() + 6) % 7; // Convert to 0=Monday format
     
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+    if (dayOfWeek >= 0 && dayOfWeek < 5) { // Monday-Friday only
       for (const employee of allEmployees) {
+        // Get template planning for this day of week
         const planning = allPlannings.find(p => 
-          p.userId === employee.idUser && new Date(p.startTime).getDay() === dayOfWeek
+          p.userId === employee.idUser && p.dayOfWeek === dayOfWeek
         );
         
         if (planning) {
+          // Use template start/end times (9:00-17:00 in epoch)
           const planStart = new Date(planning.startTime);
           const planEnd = new Date(planning.endTime);
+          const planStartHour = planStart.getUTCHours();
+          const planStartMin = planStart.getUTCMinutes();
+          const planEndHour = planEnd.getUTCHours();
+          const planEndMin = planEnd.getUTCMinutes();
+          
           const profileType = employeeProfiles.get(employee.idUser) || 'punctual';
           
           const clockIn = new Date(currentDate);
-          clockIn.setHours(planStart.getHours(), planStart.getMinutes(), 0, 0);
+          clockIn.setHours(planStartHour, planStartMin, 0, 0);
           
           const clockOut = new Date(currentDate);
-          clockOut.setHours(planEnd.getHours(), planEnd.getMinutes(), 0, 0);
+          clockOut.setHours(planEndHour, planEndMin, 0, 0);
           
           switch (profileType) {
             case 'ideal':

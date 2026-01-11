@@ -140,7 +140,6 @@ export default {
       // Log auth header and decoded user for debugging
       const authHeader = req.headers?.authorization || null;
       const authPreview = authHeader ? (authHeader.length > 20 ? authHeader.substr(0,20) + '...' : authHeader) : null;
-      console.log('getUserById entry', { targetId, authHeaderPresent: !!authHeader, authPreview, reqUser: req.user });
 
       if (Number.isNaN(targetId)) return res.status(400).json({ error: "ID utilisateur invalide." });
 
@@ -150,7 +149,6 @@ export default {
         try {
           const token = authHeader.split(' ')[1];
           decodedUser = (await import('jsonwebtoken')).verify(token, process.env.JWT_SECRET);
-          console.log('getUserById: decoded token fallback', { id: decodedUser?.id, profile: decodedUser?.profile });
         } catch (err) {
           console.error('getUserById: token decode fallback failed', err.message);
           return res.status(403).json({ error: 'Token invalide ou expiré.' });
@@ -172,7 +170,6 @@ export default {
       if (requesterProfile === "manager") {
         try {
           const allowed = (requesterId === targetId) || (await isInManagersTeam(targetId, requesterId));
-          console.log('getUserById manager check', { requesterId, targetId, allowed });
           if (allowed) return res.json(user);
         } catch (err) {
           console.error('Error during manager membership check (getUserById):', err);

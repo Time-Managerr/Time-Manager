@@ -233,11 +233,12 @@ const fetchPlannings = async (forUserId = null) => {
 
     const plans = await planningService.getByUserId(userId);
 
-    // Map plannings by date string 'YYYY-MM-DD'
-    const plansByDate = {};
+    // Map plannings by dayOfWeek (templates use dayOfWeek, 0=Monday...6=Sunday)
+    const plansByDayOfWeek = {};
     plans.forEach(p => {
-      const d = new Date(p.date).toISOString().split('T')[0];
-      plansByDate[d] = p;
+      if (p.isTemplate && p.dayOfWeek !== null && p.dayOfWeek !== undefined) {
+        plansByDayOfWeek[p.dayOfWeek] = p;
+      }
     });
 
     // Build week
@@ -246,7 +247,8 @@ const fetchPlannings = async (forUserId = null) => {
     const evts = [];
     weekDates.value.forEach((d, idx) => {
       const dateStr = d.toISOString().split('T')[0];
-      const p = plansByDate[dateStr];
+      // idx is the day of week (0=Monday, 6=Sunday)
+      const p = plansByDayOfWeek[idx];
       if (p) {
         const start = new Date(p.startTime);
         const end = new Date(p.endTime);
@@ -255,7 +257,7 @@ const fetchPlannings = async (forUserId = null) => {
         const duration = (end - start) / (1000 * 60 * 60);
         evts.push({ id: p.idPlanning, title: 'Day Shift', dayIndex: idx, startHour, durationHours: Math.max(0.25, duration), isDefault: false, planId: p.idPlanning, date: dateStr });
       } else {
-        // Default 9-17 Mon-Fri
+        // Default 9-17 Mon-Fri if no template defined
         if (idx <= 4) {
           evts.push({ id: `default-${dateStr}`, title: 'Day Shift', dayIndex: idx, startHour: 9, durationHours: 8, isDefault: true, date: dateStr });
         }

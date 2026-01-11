@@ -286,7 +286,10 @@ export default {
     const formatTime = (iso) => {
       if (!iso) return '-';
       try {
-        return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const d = new Date(iso);
+        const hours = String(d.getUTCHours()).padStart(2, '0');
+        const minutes = String(d.getUTCMinutes()).padStart(2, '0');
+        return `${hours}:${minutes}`;
       } catch (e) { return '-'; }
     };
 
@@ -301,16 +304,32 @@ export default {
       if (!clock || !clock.clockIn) return false;
       try {
         const clockInTime = new Date(clock.clockIn);
+        const clockHour = clockInTime.getUTCHours();
+        const clockMin = clockInTime.getUTCMinutes();
         
         // If there's a planning, compare with planned start time + 5min grace period
         if (clock.planning && clock.planning.startTime) {
           const plannedStart = new Date(clock.planning.startTime);
-          plannedStart.setMinutes(plannedStart.getMinutes() + 5); // Add 5min tolerance
-          return clockInTime > plannedStart;
+          let plannedHour = plannedStart.getUTCHours();
+          let plannedMin = plannedStart.getUTCMinutes();
+          
+          // Add 5min grace period
+          plannedMin += 5;
+          if (plannedMin >= 60) {
+            plannedHour += 1;
+            plannedMin -= 60;
+          }
+          
+          // Compare time only (HH:MM format as total minutes)
+          const clockTotalMin = clockHour * 60 + clockMin;
+          const plannedTotalMin = plannedHour * 60 + plannedMin;
+          return clockTotalMin > plannedTotalMin;
         }
         
         // Fallback to default 9:05 (9:00 + 5min) if no planning
-        return clockInTime.getHours() > 9 || (clockInTime.getHours() === 9 && clockInTime.getMinutes() > 5);
+        const defaultTotalMin = 9 * 60 + 5;
+        const clockTotalMin = clockHour * 60 + clockMin;
+        return clockTotalMin > defaultTotalMin;
       } catch (e) { 
         return false; 
       }
@@ -328,7 +347,7 @@ export default {
         }
         
         // Fallback to default 17:00 if no planning
-        return clockOutTime.getHours() < 17 || (clockOutTime.getHours() === 17 && clockOutTime.getMinutes() < 0);
+        return clockOutTime.getUTCHours() < 17 || (clockOutTime.getUTCHours() === 17 && clockOutTime.getUTCMinutes() < 0);
       } catch (e) { 
         return false; 
       }
@@ -475,21 +494,36 @@ export default {
           // Fetch all plannings for the user
           const plannings = await planningService.getByUserId(targetId.value);
           
-          // Build a map of plannings by date for quick lookup
+          // Build maps of plannings by date and by dayOfWeek
           const planningsByDate = {};
+          const planningsByDayOfWeek = {};
           plannings.forEach(p => {
-            const dateKey = new Date(p.date).toDateString();
-            planningsByDate[dateKey] = p;
+            if (p.isTemplate && p.dayOfWeek !== null && p.dayOfWeek !== undefined) {
+              // Template planning - map by dayOfWeek (0=Monday, ..., 6=Sunday)
+              planningsByDayOfWeek[p.dayOfWeek] = p;
+            } else if (p.date) {
+              // Historical planning - map by date
+              const dateKey = new Date(p.date).toDateString();
+              planningsByDate[dateKey] = p;
+            }
           });
           
           // Attach planning data to clocks
           clockHistory.value = clocksRes.filter(c => {
             const d = new Date(c.clockIn);
             return d >= start && d <= end;
-          }).map(c => ({
-            ...c,
-            planning: planningsByDate[new Date(c.clockIn).toDateString()]
-          })).sort((a, b) => new Date(b.clockIn) - new Date(a.clockIn));
+          }).map(c => {
+            const d = new Date(c.clockIn);
+            const dateKey = d.toDateString();
+            const dayOfWeek = (d.getDay() + 6) % 7; // Convert to 0=Monday format
+            
+            // First try to find date-specific planning, then fall back to template
+            const planning = planningsByDate[dateKey] || planningsByDayOfWeek[dayOfWeek];
+            return {
+              ...c,
+              planning
+            };
+          }).sort((a, b) => new Date(b.clockIn) - new Date(a.clockIn));
           
           // Create charts
           await createCharts();

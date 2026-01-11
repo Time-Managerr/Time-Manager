@@ -58,7 +58,7 @@ const getPlanning = async (req, res) => {
         }
       }
       const requesterProfileNorm = (decodedUser?.profile || requesterProfile || '').toString().toLowerCase();
-      requesterId = decodedUser?.id || requesterId; // keep existing if available
+      requesterId = decodedUser?.id || requesterId;
 
       let allowed = false;
       let managerCheck = false;
@@ -80,26 +80,52 @@ const getPlanning = async (req, res) => {
 
       if (!allowed) return res.status(403).json({ error: "Accès refusé." });
 
-      const plans = await prisma.plannings.findMany({ where: { userId: targetId } });
-      return res.json(plans);
+      // Fetch template plannings (isTemplate=true) for this user
+      const templates = await prisma.plannings.findMany({ 
+        where: { userId: targetId, isTemplate: true },
+        orderBy: { dayOfWeek: 'asc' }
+      });
+
+      // If no templates exist, create default 9-17 for weekdays (Mon-Fri)
+      if (templates.length === 0) {
+        console.log(`Creating default template planning for user ${targetId}`);
+        const defaultTemplates = [];
+        for (let day = 1; day <= 5; day++) {
+          defaultTemplates.push({
+            userId: targetId,
+            dayOfWeek: day,
+            startTime: new Date('1970-01-01T09:00:00Z'),
+            endTime: new Date('1970-01-01T17:00:00Z'),
+            isTemplate: true,
+            date: null
+          });
+        }
+        await prisma.plannings.createMany({ data: defaultTemplates });
+        const newTemplates = await prisma.plannings.findMany({ 
+          where: { userId: targetId, isTemplate: true },
+          orderBy: { dayOfWeek: 'asc' }
+        });
+        return res.json(newTemplates);
+      }
+
+      return res.json(templates);
     }
 
     // No user filter: admin gets all; manager gets their teams; employee gets own
     if (requesterProfile === "admin") {
-      const plans = await prisma.plannings.findMany();
+      const plans = await prisma.plannings.findMany({ where: { isTemplate: true } });
       return res.json(plans);
     }
 
     if (requesterProfile === "manager") {
-      // get users part of teams managed by this manager
       const users = await prisma.users.findMany({ where: { TeamUser: { some: { Teams: { managerId: requesterId } } } } });
       const userIds = users.map(u => u.idUser);
-      const plans = await prisma.plannings.findMany({ where: { userId: { in: userIds } } });
+      const plans = await prisma.plannings.findMany({ where: { userId: { in: userIds }, isTemplate: true } });
       return res.json(plans);
     }
 
-    // employee: own plans
-    const plans = await prisma.plannings.findMany({ where: { userId: requesterId } });
+    // employee: own templates
+    const plans = await prisma.plannings.findMany({ where: { userId: requesterId, isTemplate: true } });
     return res.json(plans);
 
   } catch (error) {
@@ -166,10 +192,7 @@ const updatePlanning = async (req, res) => {
   try {
     const { id } = req.params;
     console.log('updatePlanning raw req.body:', req.body);
-    // Try to validate but prefer raw request values for coercion
-    const validated = PlanningsValidator.pick({ startTime: true, endTime: true }).safeParse(req.body);
-    console.log('updatePlanning parsed ok?', validated.success);
-
+    
     const requesterId = req.user?.id;
     const requesterProfile = req.user?.profile;
 
@@ -191,7 +214,34 @@ const updatePlanning = async (req, res) => {
       return res.status(403).json({ error: "Accès refusé." });
     }
 
-    // Normalize and ensure full ISO timezone; handle strings without timezone by appending 'Z'
+    // For template plannings, update startTime/endTime only (no date conversion needed)
+    if (existing.isTemplate) {
+      const { startTime, endTime } = req.body;
+      if (!startTime || !endTime) {
+        return res.status(400).json({ error: 'startTime and endTime are required' });
+      }
+
+      // Convert HH:mm to DateTime (use epoch date)
+      const toDateTime = (timeStr) => {
+        if (timeStr instanceof Date) return timeStr;
+        if (typeof timeStr === 'string' && /^\d{2}:\d{2}$/.test(timeStr)) {
+          return new Date(`1970-01-01T${timeStr}:00Z`);
+        }
+        return new Date(timeStr);
+      };
+
+      const updated = await prisma.plannings.update({
+        where: { idPlanning: Number.parseInt(id) },
+        data: { 
+          startTime: toDateTime(startTime), 
+          endTime: toDateTime(endTime) 
+        },
+      });
+
+      return res.json(updated);
+    }
+
+    // For historical plannings, update with full date-time
     const toDate = (val) => {
       if (val instanceof Date) return val;
       if (typeof val === 'string') {
@@ -202,23 +252,12 @@ const updatePlanning = async (req, res) => {
       return new Date(val);
     };
 
-    // Prefer raw values from req.body to avoid unexpected preservation of original strings
-    const rawStart = req.body?.startTime;
-    const rawEnd = req.body?.endTime;
-    console.log('updatePlanning raw start/end:', rawStart, rawEnd, 'validatedSuccess:', validated.success);
-
-    const startTime = toDate(rawStart ?? (validated.success ? validated.data.startTime : undefined));
-    const endTime = toDate(rawEnd ?? (validated.success ? validated.data.endTime : undefined));
+    const startTime = toDate(req.body?.startTime);
+    const endTime = toDate(req.body?.endTime);
 
     if (isNaN(startTime) || isNaN(endTime)) {
       console.log('updatePlanning invalid dates after coercion:', { startTime, endTime });
       return res.status(400).json({ error: 'Invalid startTime or endTime' });
-    }
-    console.log('updatePlanning dates (toISOString):', { id, startTime: startTime.toISOString(), endTime: endTime.toISOString() });
-
-    // DEV: if debug flag is present, return the parsed data instead of updating DB
-    if (process.env.NODE_ENV !== 'production' && req.query && req.query.debug === 'true') {
-      return res.json({ raw: req.body, validated: validated.success ? validated.data : null, startISO: startTime.toISOString(), endISO: endTime.toISOString() });
     }
 
     const updated = await prisma.plannings.update({

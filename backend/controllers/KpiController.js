@@ -23,23 +23,33 @@ async function computeForUser(userId, metric, startDate, endDate) {
       select: { idClock: true, clockIn: true }
     });
 
-    // Get user's plannings to determine expected start times
+    // Get user's plannings (both templates and date-specific)
     const plannings = await prisma.plannings.findMany({
       where: { userId },
-      select: { startTime: true, endTime: true }
+      select: { startTime: true, endTime: true, date: true, isTemplate: true, dayOfWeek: true }
     });
 
     // Count how many clocks are late (clockIn > expected start time with 5min grace period)
     let lateCount = 0;
     for (const clock of clocks) {
       const clockInTime = new Date(clock.clockIn);
-      const dayOfWeek = clockInTime.getDay(); // 0=Sunday, 1=Monday, etc
+      const clockDateStr = clockInTime.toISOString().split('T')[0]; // YYYY-MM-DD
+      const dayOfWeek = (clockInTime.getDay() + 6) % 7; // Convert to 0=Monday format
       
-      // Find matching planning for this day
-      const planning = plannings.find(p => {
-        const pStart = new Date(p.startTime);
-        return pStart.getDay() === dayOfWeek;
+      // First, try to find a date-specific planning for this exact date
+      let planning = plannings.find(p => {
+        if (p.isTemplate) return false; // Skip templates for now
+        if (!p.date) return false;
+        const pDateStr = new Date(p.date).toISOString().split('T')[0];
+        return pDateStr === clockDateStr;
       });
+
+      // If no date-specific planning, use template planning for this day of week
+      if (!planning) {
+        planning = plannings.find(p => {
+          return p.isTemplate && p.dayOfWeek === dayOfWeek;
+        });
+      }
 
       if (planning) {
         // Extract time from planning start
@@ -167,7 +177,6 @@ const getKpiResults = async (req, res) => {
 // Export endpoint: for MVP return same JSON; frontend will convert to PDF
 const computeAdHoc = async (req, res) => {
   try {
-    console.log('computeAdHoc called', { body: req.body, userId: req.user?.id, profile: req.user?.profile });
     const { metric, scope, targetUserId, targetTeamId, start, end } = req.body;
     const requesterId = req.user?.id;
     const requesterProfile = (req.user?.profile || '').toString().toLowerCase();

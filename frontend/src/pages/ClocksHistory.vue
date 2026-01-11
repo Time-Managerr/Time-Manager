@@ -77,7 +77,12 @@ onMounted(fetchData);
 const formatTime = (iso) => {
   if (!iso) return '-';
   try {
-    return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return (() => {
+      const d = new Date(iso);
+      const hours = String(d.getUTCHours()).padStart(2, '0');
+      const minutes = String(d.getUTCMinutes()).padStart(2, '0');
+      return `${hours}:${minutes}`;
+    })();
   } catch (e) { return '-'; }
 };
 

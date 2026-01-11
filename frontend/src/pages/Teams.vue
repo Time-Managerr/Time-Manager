@@ -484,38 +484,26 @@ const openPlanningPopup = async (member) => {
   }
 
   try {
-    // Fetch plannings for this member and group by day of week
-    const plans = await planningService.getByUserId(member.id);
+    // Fetch template plannings for this member (isTemplate=true)
+    const templates = await planningService.getByUserId(member.id);
     
-    // Group by day of week
+    // Convert to UI format
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const planningsByDay = {};
-    
-    plans.forEach(p => {
-      const dayOfWeek = new Date(p.date).getDay();
-      if (!planningsByDay[dayOfWeek]) {
-        planningsByDay[dayOfWeek] = {
-          dayOfWeek,
-          dayName: dayNames[dayOfWeek],
-          plannings: [],
-          timeStart: timeFromISO(p.startTime),
-          timeEnd: timeFromISO(p.endTime)
-        };
-      }
-      planningsByDay[dayOfWeek].plannings.push(p);
-    });
-    
-    // Convert to array and sort by day of week
-    const planningsByDayArray = Object.values(planningsByDay).sort((a, b) => a.dayOfWeek - b.dayOfWeek);
+    const planningsByDay = templates.map(t => ({
+      idPlanning: t.idPlanning,
+      dayOfWeek: t.dayOfWeek,
+      dayName: dayNames[t.dayOfWeek],
+      timeStart: timeFromISO(t.startTime),
+      timeEnd: timeFromISO(t.endTime)
+    })).sort((a, b) => a.dayOfWeek - b.dayOfWeek);
     
     selectedMemberPlanning.value = { 
       ...member, 
-      plannings: plans,
-      planningsByDay: planningsByDayArray 
+      planningsByDay
     };
   } catch (err) {
     console.error('Erreur lors de la récupération des plannings:', err);
-    toast.error('Unable to retrieve member plannings.');
+    toast.error('Unable to retrieve member planning templates.');
   }
 };
 
@@ -549,41 +537,30 @@ const formatDateForDisplay = (isoDate) => {
 const savePlanningsChanges = async () => {
   if (!selectedMemberPlanning.value || !selectedMemberPlanning.value.planningsByDay) return;
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
     const updates = [];
     
-    // For each day of week that was edited
+    // Update each template planning
     for (const dayPlan of selectedMemberPlanning.value.planningsByDay) {
-      // Find all plannings for this day of week that are today or in the future
-      const planningsToUpdate = dayPlan.plannings.filter(p => {
-        const planDate = new Date(p.date);
-        planDate.setHours(0, 0, 0, 0);
-        return planDate >= today;
-      });
-      
-      // Update each one with the new times
-      planningsToUpdate.forEach(plan => {
-        const datePart = formatDateISO(plan.date);
-        const startISO = `${datePart}T${dayPlan.timeStart}:00Z`;
-        const endISO = `${datePart}T${dayPlan.timeEnd}:00Z`;
-        updates.push(
-          planningService.updatePlanning(plan.idPlanning, {
-            startTime: startISO,
-            endTime: endISO
-          })
-        );
-      });
+      updates.push(
+        planningService.updatePlanning(dayPlan.idPlanning, {
+          startTime: dayPlan.timeStart,
+          endTime: dayPlan.timeEnd
+        })
+      );
+    }
+    
+    if (updates.length === 0) {
+      toast.warning('No planning templates to update.');
+      return;
     }
     
     await Promise.all(updates);
-    toast.success(`Plannings updated successfully (${updates.length} entries updated)`);
+    toast.success(`Successfully updated ${updates.length} planning template(s)`);
     closePlanningPopup();
-    await fetchTeams(); // Refresh teams list
+    await fetchTeams();
   } catch (err) {
     console.error('Erreur lors de la sauvegarde des plannings:', err);
-    toast.error('Error saving plannings.');
+    toast.error('Error saving planning templates: ' + (err.response?.data?.error || err.message));
   }
 };
 

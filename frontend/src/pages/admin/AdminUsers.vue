@@ -132,9 +132,9 @@
           <tr v-for="p in plannings" :key="p.idPlanning">
             <td>{{ p.idPlanning }}</td>
             <td>{{ new Date(p.date).toISOString().split('T')[0] }}</td>
-            <td v-if="editingPlanningId !== p.idPlanning">{{ new Date(p.startTime).toLocaleTimeString().slice(0,5) }}</td>
+            <td v-if="editingPlanningId !== p.idPlanning">{{ (() => { const d = new Date(p.startTime); return String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0'); })() }}</td>
             <td v-else><input v-model="editPlanningForm.startTime" type="time" class="form-control form-control-sm"/></td>
-            <td v-if="editingPlanningId !== p.idPlanning">{{ new Date(p.endTime).toLocaleTimeString().slice(0,5) }}</td>
+            <td v-if="editingPlanningId !== p.idPlanning">{{ (() => { const d = new Date(p.endTime); return String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0'); })() }}</td>
             <td v-else><input v-model="editPlanningForm.endTime" type="time" class="form-control form-control-sm"/></td>
             <td>
               <button v-if="editingPlanningId !== p.idPlanning" class="btn btn-sm btn-outline-primary me-1" @click="startEditPlanning(p)">Edit</button>

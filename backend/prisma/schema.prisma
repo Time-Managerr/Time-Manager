@@ -25,13 +25,16 @@ model Clocks {
 }
 
 model Plannings {
-  idPlanning Int      @id @default(autoincrement())
+  idPlanning Int       @id @default(autoincrement())
   userId     Int
-  date       DateTime
+  date       DateTime?
+  dayOfWeek  Int?      // 0-6 for template plannings (Mon-Sun)
   startTime  DateTime
   endTime    DateTime
-  Users      Users    @relation(fields: [userId], references: [idUser])
+  isTemplate Boolean   @default(false) // true = active template, false = historical record
+  Users      Users     @relation(fields: [userId], references: [idUser])
 
+  @@unique([userId, dayOfWeek, isTemplate], name: "unique_template_per_day")
   @@index([userId], map: "Plannings_userId_fkey")
 }
 
