@@ -1,6 +1,7 @@
 <template>
     <div>
-        <template v-if="route.path === '/Login'">
+        <ToastContainer />
+        <template v-if="route.path && route.path.toLowerCase() === '/login'">
             <router-view />
         </template>
         <template v-else>
@@ -21,6 +22,7 @@
 import { useRoute } from 'vue-router'
 import Header from './components/Header.vue'
 import SideNav from './components/SideNav.vue'
+import ToastContainer from './components/ToastContainer.vue'
 
 const route = useRoute()
 </script>

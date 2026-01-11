@@ -1,8 +1,15 @@
 <template>
   <main class="flex-fill p-4">
     <section class="profile">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold">My Profile</h4>
+      <!-- PAGE TITLE -->
+      <div class="page-header d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center gap-3">
+          <svg viewBox="0 0 24 24" class="page-icon" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <h3 class="page-title mb-0">My Profile</h3>
+        </div>
         <button class="btn btn-outline-primary btn-sm" @click="onSave">
           <i class="bi bi-save me-1"></i> Save changes
         </button>
@@ -12,16 +19,8 @@
       <div class="card shadow-sm p-4 mb-4 border-0 rounded-3">
         <div class="row align-items-center">
           <div class="col-md-3 text-center">
-            <div class="position-relative d-inline-block">
-              <img :src="avatar" alt="avatar" class="profile-avatar mb-2" />
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-secondary edit-btn"
-                @click="onEditAvatar"
-                title="Change avatar"
-              >
-                ✎
-              </button>
+            <div class="profile-avatar">
+              <span class="initials">{{ getInitials(user.firstname, user.lastname) }}</span>
             </div>
           </div>
           <div class="col-md-9">
@@ -85,6 +84,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useToast } from '../composables/useToast'
+
+const toast = useToast()
 
 const user = ref({
   firstname: '',
@@ -92,63 +94,77 @@ const user = ref({
   email: '',
   phone: ''
 })
-const avatar = ref('/vite.svg')
+
+const getInitials = (firstname, lastname) => {
+  if (!firstname || !lastname) return '?';
+  return (firstname[0] + lastname[0]).toUpperCase();
+};
 
 onMounted(() => {
   const storedUser = JSON.parse(localStorage.getItem("user"))
   if (storedUser) {
     user.value = storedUser
-    if (storedUser.avatar) avatar.value = storedUser.avatar
   } else {
     console.warn("Aucun utilisateur trouvé dans le localStorage")
   }
 })
 
-function onEditAvatar() {
-  alert('Change avatar - not implemented yet')
-}
-
 function onSave() {
   localStorage.setItem("user", JSON.stringify(user.value))
-  alert('Saved successfully! (demo)')
+  toast.success('Profile saved successfully!')
 }
 </script>
 
 
 <style scoped>
+/* PAGE HEADER STYLES - Consistent across all pages */
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.page-icon {
+  width: 32px;
+  height: 32px;
+  color: #1b93b1;
+  flex-shrink: 0;
+}
+
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1b93b1;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
 /* General Layout */
 .profile {
   max-width: 900px;
   margin: 0 auto;
 }
 
-/* Avatar Styling */
+/* Avatar styling */
 .profile-avatar {
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #e9ecef;
-  background-color: #f8f9fa;
-  transition: transform 0.3s ease;
-}
-.profile-avatar:hover {
-  transform: scale(1.03);
-}
-
-.edit-btn {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  transform: translate(25%, 25%);
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  padding: 0;
+  background: linear-gradient(135deg, #1b93b1 0%, #2ca9bc 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.85rem;
+  margin: 0 auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.profile-avatar .initials {
+  color: white;
+  font-size: 2.5rem;
+  font-weight: 600;
+  user-select: none;
 }
 
 /* Card styling */

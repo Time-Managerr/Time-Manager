@@ -2,6 +2,25 @@ openapi: 3.0.0
 info:
   title: Time Manager API
   version: 1.0.0
+  description: API complète pour la gestion du temps, des équipes et des KPIs
+
+servers:
+  - url: http://localhost/api
+    description: Serveur local
+
+tags:
+  - name: Auth
+    description: Authentification et autorisation
+  - name: Users
+    description: Gestion des utilisateurs
+  - name: Clocks
+    description: Gestion des pointages
+  - name: Planning
+    description: Gestion des plannings
+  - name: Teams
+    description: Gestion des équipes
+  - name: KPIs
+    description: Indicateurs de performance
 
 paths:
   /auth/login:
@@ -15,16 +34,34 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - email
+                - password
               properties:
                 email:
                   type: string
+                  format: email
                   example: test@mail.com
                 password:
                   type: string
-                  example: 1234
+                  format: password
+                  example: '1234'
       responses:
         '200':
           description: Connexion réussie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Email ou mot de passe incorrect
+        '400':
+          description: Données invalides
 
   /users:
     post:
@@ -40,6 +77,14 @@ paths:
       responses:
         '201':
           description: Utilisateur créé avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Données invalides
+        '409':
+          description: Email déjà utilisé
 
     get:
       summary: Récupère tous les utilisateurs
@@ -57,7 +102,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/UserResponse'
         '401':
-          description: Token manquant ou invalide
+          description: Non autorisé
 
   /users/{id}:
     get:
@@ -81,12 +126,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserResponse'
         '401':
-          description: Token manquant ou invalide
+          description: Non autorisé
         '404':
           description: Utilisateur introuvable
 
     put:
-      summary: Modifie un utilisateur existant
+      summary: Modifie un utilisateur
       security:
         - bearerAuth: []
       tags:
@@ -97,7 +142,6 @@ paths:
           required: true
           schema:
             type: integer
-          description: ID de l'utilisateur
       requestBody:
         required: true
         content:
@@ -106,12 +150,18 @@ paths:
               $ref: '#/components/schemas/UserCreate'
       responses:
         '200':
-          description: Utilisateur modifié avec succès
+          description: Utilisateur modifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Non autorisé
         '404':
           description: Utilisateur non trouvé
 
     delete:
-      summary: Supprime un utilisateur existant
+      summary: Supprime un utilisateur
       security:
         - bearerAuth: []
       tags:
@@ -122,12 +172,515 @@ paths:
           required: true
           schema:
             type: integer
-          description: ID de l'utilisateur
       responses:
         '204':
-          description: Utilisateur supprimé avec succès
+          description: Utilisateur supprimé
+        '401':
+          description: Non autorisé
         '404':
           description: Utilisateur non trouvé
+
+  /clocks:
+    post:
+      summary: Effectue un clock-in
+      security:
+        - bearerAuth: []
+      tags:
+        - Clocks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: integer
+                  example: 1
+      responses:
+        '201':
+          description: Clock-in enregistré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClockResponse'
+        '400':
+          description: Clock déjà ouvert
+        '401':
+          description: Non autorisé
+
+    get:
+      summary: Récupère tous les pointages
+      security:
+        - bearerAuth: []
+      tags:
+        - Clocks
+      responses:
+        '200':
+          description: Liste des pointages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClockResponse'
+        '401':
+          description: Non autorisé
+
+  /clocks/{idClock}/clockout:
+    put:
+      summary: Effectue un clock-out
+      security:
+        - bearerAuth: []
+      tags:
+        - Clocks
+      parameters:
+        - in: path
+          name: idClock
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Clock-out enregistré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClockResponse'
+        '400':
+          description: Clock déjà fermé
+        '401':
+          description: Non autorisé
+        '404':
+          description: Clock non trouvé
+
+  /clocks/user/{userId}:
+    get:
+      summary: Récupère les pointages d'un utilisateur
+      security:
+        - bearerAuth: []
+      tags:
+        - Clocks
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Liste des pointages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClockResponse'
+        '401':
+          description: Non autorisé
+
+  /clocks/{id}:
+    delete:
+      summary: Supprime un pointage
+      security:
+        - bearerAuth: []
+      tags:
+        - Clocks
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Pointage supprimé
+        '401':
+          description: Non autorisé
+        '404':
+          description: Pointage non trouvé
+
+  /planning:
+    get:
+      summary: Récupère les plannings
+      security:
+        - bearerAuth: []
+      tags:
+        - Planning
+      responses:
+        '200':
+          description: Liste des plannings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlanningResponse'
+        '401':
+          description: Non autorisé
+
+    post:
+      summary: Crée un planning
+      security:
+        - bearerAuth: []
+      tags:
+        - Planning
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanningCreate'
+      responses:
+        '201':
+          description: Planning créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanningResponse'
+        '400':
+          description: Données invalides
+        '401':
+          description: Non autorisé
+        '403':
+          description: Admin/Manager requis
+
+  /planning/{id}:
+    put:
+      summary: Modifie un planning
+      security:
+        - bearerAuth: []
+      tags:
+        - Planning
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanningCreate'
+      responses:
+        '200':
+          description: Planning modifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanningResponse'
+        '401':
+          description: Non autorisé
+        '403':
+          description: Permissions insuffisantes
+        '404':
+          description: Planning non trouvé
+
+    delete:
+      summary: Supprime un planning
+      security:
+        - bearerAuth: []
+      tags:
+        - Planning
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Planning supprimé
+        '401':
+          description: Non autorisé
+        '403':
+          description: Admin requis
+        '404':
+          description: Planning non trouvé
+
+  /teams:
+    post:
+      summary: Crée une équipe
+      security:
+        - bearerAuth: []
+      tags:
+        - Teams
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamCreate'
+      responses:
+        '201':
+          description: Équipe créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamResponse'
+        '400':
+          description: Données invalides
+        '401':
+          description: Non autorisé
+        '403':
+          description: Admin/Manager requis
+
+    get:
+      summary: Récupère toutes les équipes
+      security:
+        - bearerAuth: []
+      tags:
+        - Teams
+      responses:
+        '200':
+          description: Liste des équipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeamResponse'
+        '401':
+          description: Non autorisé
+
+  /teams/{id}:
+    get:
+      summary: Récupère une équipe par ID
+      security:
+        - bearerAuth: []
+      tags:
+        - Teams
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Équipe trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamResponse'
+        '401':
+          description: Non autorisé
+        '404':
+          description: Équipe non trouvée
+
+    put:
+      summary: Modifie une équipe
+      security:
+        - bearerAuth: []
+      tags:
+        - Teams
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamUpdate'
+      responses:
+        '200':
+          description: Équipe modifiée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamResponse'
+        '401':
+          description: Non autorisé
+        '403':
+          description: Permissions insuffisantes
+        '404':
+          description: Équipe non trouvée
+
+    delete:
+      summary: Supprime une équipe
+      security:
+        - bearerAuth: []
+      tags:
+        - Teams
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Équipe supprimée
+        '401':
+          description: Non autorisé
+        '403':
+          description: Permissions insuffisantes
+        '404':
+          description: Équipe non trouvée
+
+  /teams/user/{userId}:
+    get:
+      summary: Récupère les équipes d'un utilisateur
+      security:
+        - bearerAuth: []
+      tags:
+        - Teams
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Liste des équipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeamResponse'
+        '401':
+          description: Non autorisé
+
+  /kpis:
+    post:
+      summary: Crée un KPI
+      security:
+        - bearerAuth: []
+      tags:
+        - KPIs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KpiCreate'
+      responses:
+        '201':
+          description: KPI créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KpiResponse'
+        '400':
+          description: Données invalides
+        '401':
+          description: Non autorisé
+        '403':
+          description: Permissions insuffisantes
+
+    get:
+      summary: Liste tous les KPIs
+      security:
+        - bearerAuth: []
+      tags:
+        - KPIs
+      responses:
+        '200':
+          description: Liste des KPIs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KpiResponse'
+        '401':
+          description: Non autorisé
+
+  /kpis/compute:
+    post:
+      summary: Calcule un KPI ad-hoc
+      security:
+        - bearerAuth: []
+      tags:
+        - KPIs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KpiComputeRequest'
+      responses:
+        '200':
+          description: Métriques calculées
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/UserKpiResult'
+                  - $ref: '#/components/schemas/TeamKpiResult'
+        '400':
+          description: Paramètres invalides
+        '401':
+          description: Non autorisé
+        '403':
+          description: Permissions insuffisantes
+        '404':
+          description: Utilisateur ou équipe non trouvé
+
+  /kpis/{id}/results:
+    get:
+      summary: Récupère les résultats d'un KPI
+      security:
+        - bearerAuth: []
+      tags:
+        - KPIs
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Résultats du KPI
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/UserKpiResult'
+                  - $ref: '#/components/schemas/TeamKpiResult'
+        '401':
+          description: Non autorisé
+        '403':
+          description: Permissions insuffisantes
+        '404':
+          description: KPI non trouvé
+
+  /kpis/{id}/export:
+    get:
+      summary: Exporte un KPI en PDF
+      security:
+        - bearerAuth: []
+      tags:
+        - KPIs
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: PDF généré
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Non autorisé
+        '403':
+          description: Permissions insuffisantes
+        '404':
+          description: KPI non trouvé
 
 components:
   schemas:
@@ -143,22 +696,25 @@ components:
       properties:
         firstname:
           type: string
-          example: "Jean"
+          example: Jean
         lastname:
           type: string
-          example: "Loris"
+          example: Loris
         email:
           type: string
-          example: "test@mail.fr"
+          format: email
+          example: test@mail.fr
         password:
           type: string
-          example: "Admin123!"
+          format: password
+          example: Admin123!
         phone:
           type: string
-          example: "06254851"
+          example: '0625485123'
         profile:
           type: string
-          example: "manager"
+          enum: [admin, manager, employee]
+          example: manager
 
     UserResponse:
       type: object
@@ -168,19 +724,321 @@ components:
           example: 1
         firstname:
           type: string
-          example: "Jean"
+          example: Jean
         lastname:
           type: string
-          example: "Loris"
+          example: Loris
         email:
           type: string
-          example: "test@mail.fr"
+          example: test@mail.fr
         phone:
           type: string
-          example: "06254851"
+          example: '0625485123'
         profile:
           type: string
-          example: "manager"
+          example: manager
+
+    ClockResponse:
+      type: object
+      properties:
+        idClock:
+          type: integer
+          example: 1
+        userId:
+          type: integer
+          example: 1
+        clockIn:
+          type: string
+          format: date-time
+          example: '2026-01-11T09:00:00Z'
+        clockOut:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2026-01-11T17:00:00Z'
+        hoursWorked:
+          type: number
+          format: float
+          nullable: true
+          example: 8.0
+
+    PlanningCreate:
+      type: object
+      required:
+        - userId
+        - date
+        - startTime
+        - endTime
+      properties:
+        userId:
+          type: integer
+          example: 1
+        date:
+          type: string
+          format: date
+          example: '2026-01-11'
+        startTime:
+          type: string
+          format: time
+          example: '09:00:00'
+        endTime:
+          type: string
+          format: time
+          example: '17:00:00'
+
+    PlanningResponse:
+      type: object
+      properties:
+        idPlanning:
+          type: integer
+          example: 1
+        userId:
+          type: integer
+          example: 1
+        date:
+          type: string
+          format: date
+          example: '2026-01-11'
+        startTime:
+          type: string
+          format: date-time
+          example: '2026-01-11T09:00:00Z'
+        endTime:
+          type: string
+          format: date-time
+          example: '2026-01-11T17:00:00Z'
+
+    TeamCreate:
+      type: object
+      required:
+        - name
+        - managerId
+      properties:
+        name:
+          type: string
+          example: Équipe Dev
+        description:
+          type: string
+          example: Équipe de développement
+        managerId:
+          type: integer
+          example: 2
+
+    TeamUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Équipe Dev
+        description:
+          type: string
+          example: Équipe de développement
+        managerId:
+          type: integer
+          example: 2
+
+    TeamResponse:
+      type: object
+      properties:
+        idTeam:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Équipe Dev
+        description:
+          type: string
+          example: Équipe de développement
+        managerId:
+          type: integer
+          example: 2
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponse'
+
+    KpiCreate:
+      type: object
+      required:
+        - name
+        - metric
+        - scope
+      properties:
+        name:
+          type: string
+          example: Retards Janvier 2026
+        metric:
+          type: string
+          enum: [lateness, hours]
+          example: lateness
+        scope:
+          type: string
+          enum: [user, team]
+          example: user
+        targetUserId:
+          type: integer
+          example: 1
+        targetTeamId:
+          type: integer
+          example: 1
+        params:
+          type: object
+          nullable: true
+
+    KpiResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Retards Janvier 2026
+        metric:
+          type: string
+          enum: [lateness, hours]
+          example: lateness
+        scope:
+          type: string
+          enum: [user, team]
+          example: user
+        targetUserId:
+          type: integer
+          nullable: true
+          example: 1
+        targetTeamId:
+          type: integer
+          nullable: true
+        params:
+          type: object
+          nullable: true
+        createdBy:
+          type: integer
+          example: 2
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-01-11T14:30:00Z'
+
+    KpiComputeRequest:
+      type: object
+      required:
+        - scope
+      properties:
+        scope:
+          type: string
+          enum: [user, team]
+          example: user
+        targetUserId:
+          type: integer
+          example: 1
+        targetTeamId:
+          type: integer
+          example: 1
+        start:
+          type: string
+          format: date
+          example: '2025-12-12'
+        end:
+          type: string
+          format: date
+          example: '2026-01-11'
+
+    UserKpiResult:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            firstname:
+              type: string
+              example: Jean
+            lastname:
+              type: string
+              example: Loris
+            email:
+              type: string
+              example: test@example.com
+        lateness:
+          $ref: '#/components/schemas/LatenessMetrics'
+        hours:
+          $ref: '#/components/schemas/HoursMetrics'
+        start:
+          type: string
+          format: date
+          example: '2025-12-12'
+        end:
+          type: string
+          format: date
+          example: '2026-01-11'
+
+    TeamKpiResult:
+      type: object
+      properties:
+        teamResults:
+          type: array
+          items:
+            type: object
+            properties:
+              user:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 1
+                  firstname:
+                    type: string
+                    example: Jean
+                  lastname:
+                    type: string
+                    example: Loris
+              lateness:
+                $ref: '#/components/schemas/LatenessMetrics'
+              hours:
+                $ref: '#/components/schemas/HoursMetrics'
+        start:
+          type: string
+          format: date
+          example: '2025-12-12'
+        end:
+          type: string
+          format: date
+          example: '2026-01-11'
+
+    LatenessMetrics:
+      type: object
+      properties:
+        lateCount:
+          type: integer
+          example: 5
+        totalDays:
+          type: integer
+          example: 20
+        onTimeDays:
+          type: integer
+          example: 15
+        latePercentage:
+          type: number
+          format: float
+          example: 25.0
+
+    HoursMetrics:
+      type: object
+      properties:
+        total:
+          type: number
+          format: float
+          example: 160.5
+        totalDays:
+          type: integer
+          example: 20
+        averagePerDay:
+          type: number
+          format: float
+          example: 8.03
 
   securitySchemes:
     bearerAuth:

@@ -6,7 +6,9 @@
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "backfill:defaults": "node scripts/backfillDefaults.js",
+    "seed:mock": "node scripts/seedMockData.js"
   },
   "repository": {
     "type": "git",

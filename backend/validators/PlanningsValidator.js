@@ -16,7 +16,8 @@ const PlanningsValidator = z.object({
     })
     .refine((val) => !Number.isNaN(Date.parse(val)), {
       message: "La date doit être une date valide",
-    }),
+    })
+    .transform((val) => new Date(val)),
 
   startTime: z
     .string({
@@ -25,7 +26,8 @@ const PlanningsValidator = z.object({
     })
     .refine((val) => !Number.isNaN(Date.parse(val)), {
       message: "L'heure de début doit être une date valide",
-    }),
+    })
+    .transform((val) => new Date(val)),
 
   endTime: z
     .string({
@@ -34,7 +36,9 @@ const PlanningsValidator = z.object({
     })
     .refine((val) => !Number.isNaN(Date.parse(val)), {
       message: "L'heure de fin doit être une date valide",
-    }),
+    })
+    .transform((val) => new Date(val)),
+
 })
 .refine(
   (data) => new Date(data.endTime) > new Date(data.startTime),

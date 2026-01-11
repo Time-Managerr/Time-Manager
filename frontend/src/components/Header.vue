@@ -1,13 +1,45 @@
 <template>
   <header class="app-header">
     <div class="container d-flex justify-content-between align-items-center">
-      <div class="date fst-italic">10 October 2025</div>
-      <div class="time">15:18:17</div>
+      <div class="date fst-italic">{{ currentDate }}</div>
+      <div class="time">{{ currentTime }}</div>
     </div>
   </header>
 </template>
 
-<script setup></script>
+<script setup>
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+
+const now = ref(new Date())
+let timerId
+
+onMounted(() => {
+  timerId = setInterval(() => {
+    now.value = new Date()
+  }, 1000)
+})
+
+onUnmounted(() => {
+  if (timerId) clearInterval(timerId)
+})
+
+const currentDate = computed(() => {
+  return now.value.toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  })
+})
+
+const currentTime = computed(() => {
+  return now.value.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  })
+})
+</script>
 
 <style scoped>
 .app-header {

@@ -26,7 +26,6 @@ p {
   box-sizing: border-box;
 }
 
-
 body {
   min-width: 320px;
   background-color: #242424;
@@ -93,10 +92,145 @@ button:focus-visible {
   background-color: #78a1bb !important;
 }
 
+/* FIX CONTRASTE: était #78a1bb (trop clair sur fond blanc) */
 .text-blue-sky {
-  color: #78a1bb !important;
+  color: #1F2D5C !important;
 }
 
+/* BUTTON COLOR CUSTOMIZATION - Consistent branding */
+.btn-primary {
+  background-color: #1b93b1 !important;
+  border-color: #1b93b1 !important;
+  color: white !important;
+}
+
+.btn-primary:hover {
+  background-color: #157a93 !important;
+  border-color: #157a93 !important;
+}
+
+.btn-primary:active,
+.btn-primary:focus {
+  background-color: #0f5a73 !important;
+  border-color: #0f5a73 !important;
+}
+
+.btn-outline-primary {
+  color: #1b93b1 !important;
+  border-color: #1b93b1 !important;
+}
+
+.btn-outline-primary:hover {
+  background-color: #1b93b1 !important;
+  border-color: #1b93b1 !important;
+  color: white !important;
+}
+
+.btn-outline-primary:active,
+.btn-outline-primary:focus {
+  background-color: #157a93 !important;
+  border-color: #157a93 !important;
+  color: white !important;
+}
+
+/* Softer red for danger buttons */
+/* FIX CONTRASTE: rouge plus foncé pour texte blanc */
+.btn-danger {
+  background-color: #B84035 !important;
+  border-color: #B84035 !important;
+  color: white !important;
+}
+
+.btn-danger:hover {
+  background-color: #A5382E !important;
+  border-color: #A5382E !important;
+}
+
+.btn-danger:active,
+.btn-danger:focus {
+  background-color: #8F3027 !important;
+  border-color: #8F3027 !important;
+}
+
+/* FIX CONTRASTE: outline danger plus foncé (texte sur fond blanc) */
+.btn-outline-danger {
+  color: #B84035 !important;
+  border-color: #B84035 !important;
+}
+
+.btn-outline-danger:hover {
+  background-color: #B84035 !important;
+  border-color: #B84035 !important;
+  color: white !important;
+}
+
+.btn-outline-danger:active,
+.btn-outline-danger:focus {
+  background-color: #A5382E !important;
+  border-color: #A5382E !important;
+  color: white !important;
+}
+
+/* Secondary buttons - light gray, neutral */
+.btn-secondary {
+  background-color: #e8e8e8 !important;
+  border-color: #e8e8e8 !important;
+  color: #333 !important;
+}
+
+.btn-secondary:hover {
+  background-color: #d0d0d0 !important;
+  border-color: #d0d0d0 !important;
+}
+
+.btn-secondary:active,
+.btn-secondary:focus {
+  background-color: #b8b8b8 !important;
+  border-color: #b8b8b8 !important;
+}
+
+/* FIX CONTRASTE: teal plus foncé pour le texte sur fond blanc */
+.btn-outline-secondary {
+  color: #0f5a73 !important;
+  border-color: #0f5a73 !important;
+  background-color: white !important;
+}
+
+.btn-outline-secondary:hover {
+  background-color: #f5f5f5 !important;
+  border-color: #0f5a73 !important;
+  color: #0f5a73 !important;
+}
+
+/* Light buttons - for close/dismiss */
+.btn-light {
+  background-color: #f8f9fa !important;
+  border-color: #f8f9fa !important;
+  color: #333 !important;
+}
+
+.btn-light:hover {
+  background-color: #e8e9ea !important;
+  border-color: #e8e9ea !important;
+}
+
+/* Success buttons - use the brand blue instead */
+.btn-success {
+  background-color: #1b93b1 !important;
+  border-color: #1b93b1 !important;
+  color: white !important;
+}
+
+.btn-success:hover {
+  background-color: #157a93 !important;
+  border-color: #157a93 !important;
+}
+
+.btn-success:active,
+.btn-success:focus {
+  background-color: #0f5a73 !important;
+  border-color: #0f5a73 !important;
+}
 
 @media (prefers-color-scheme: light) {
   :root {
