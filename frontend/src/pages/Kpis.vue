@@ -309,32 +309,36 @@ export default {
       return new Date(iso).toLocaleDateString();
     };
 
+    /**
+     * ---- Refactor: reduce cognitive complexity (isClockInLate) ----
+     */
+    const toMinutes = (h, m) => h * 60 + m;
+
+    const getClockInMinutes = (clockInIso) => {
+      const d = new Date(clockInIso);
+      return toMinutes(d.getUTCHours(), d.getUTCMinutes());
+    };
+
+    const getPlannedStartMinutesWithGrace = (planningStartIso, graceMinutes = 5) => {
+      const p = new Date(planningStartIso);
+      const baseMin = toMinutes(p.getUTCHours(), p.getUTCMinutes());
+      return baseMin + graceMinutes;
+    };
+
+    const getDefaultStartMinutesWithGrace = (graceMinutes = 5) => toMinutes(9, 0) + graceMinutes;
+
     const isClockInLate = (clock) => {
       if (!clock?.clockIn) return false;
 
-      const clockInTime = new Date(clock.clockIn);
-      const clockHour = clockInTime.getUTCHours();
-      const clockMin = clockInTime.getUTCMinutes();
+      const clockMin = getClockInMinutes(clock.clockIn);
 
-      if (clock.planning?.startTime) {
-        const plannedStart = new Date(clock.planning.startTime);
-        let plannedHour = plannedStart.getUTCHours();
-        let plannedMin = plannedStart.getUTCMinutes();
-
-        plannedMin += 5;
-        if (plannedMin >= 60) {
-          plannedHour += 1;
-          plannedMin -= 60;
-        }
-
-        const clockTotalMin = clockHour * 60 + clockMin;
-        const plannedTotalMin = plannedHour * 60 + plannedMin;
-        return clockTotalMin > plannedTotalMin;
+      const plannedIso = clock.planning?.startTime;
+      if (plannedIso) {
+        const plannedMin = getPlannedStartMinutesWithGrace(plannedIso, 5);
+        return clockMin > plannedMin;
       }
 
-      const defaultTotalMin = 9 * 60 + 5;
-      const clockTotalMin = clockHour * 60 + clockMin;
-      return clockTotalMin > defaultTotalMin;
+      return clockMin > getDefaultStartMinutesWithGrace(5);
     };
 
     const isClockOutEarly = (clock) => {
@@ -530,123 +534,180 @@ export default {
       return '#f8d7da';
     };
 
+    /**
+     * ---- Refactor: reduce cognitive complexity (exportPdf) ----
+     * Keep same output, only split into helpers.
+     */
+    const buildPdfContainer = () => {
+      const container = document.createElement('div');
+      container.style.backgroundColor = '#fff';
+      container.style.padding = '20px';
+      container.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+      return container;
+    };
+
+    const buildPdfHeaderHtml = () => {
+      return `
+        <div style="margin-bottom: 20px;">
+          <h1 style="font-size: 24px; margin-bottom: 10px;">Performance Metrics Report</h1>
+          <p style="color: #666; font-size: 14px;">Period: ${startDate.value} to ${endDate.value}</p>
+        </div>
+      `;
+    };
+
+    const buildUserSummaryCardsHtml = (d) => {
+      return `
+        <div style="margin-bottom: 20px;">
+          <h2 style="font-size: 18px; margin-bottom: 10px;">${d.user.firstname} ${d.user.lastname}</h2>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div style="padding: 15px; border: 1px solid #ddd; border-radius: 5px;">
+              <h3 style="font-size: 14px; color: #666; margin-bottom: 10px;">Attendance</h3>
+              <p style="font-size: 12px; margin: 5px 0;">On time: <strong>${d.lateness.onTimeDays}/${d.lateness.totalDays} days</strong></p>
+              <p style="font-size: 12px; margin: 5px 0;">Lateness rate: <strong>${getLatenessPercentage(d.lateness)}%</strong></p>
+            </div>
+            <div style="padding: 15px; border: 1px solid #ddd; border-radius: 5px;">
+              <h3 style="font-size: 14px; color: #666; margin-bottom: 10px;">Hours Worked</h3>
+              <p style="font-size: 12px; margin: 5px 0;">Total hours: <strong>${decimalToHHMM(d.hours.total)}</strong></p>
+              <p style="font-size: 12px; margin: 5px 0;">Average daily: <strong>${decimalToHHMM(getAvgHours(d.hours))}</strong></p>
+            </div>
+          </div>
+        </div>
+      `;
+    };
+
+    const buildClockHistoryTableHeaderHtml = () => {
+      return `
+        <div style="margin-bottom: 20px;">
+          <h3 style="font-size: 16px; margin-bottom: 10px;">Clock History</h3>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+              <tr style="background-color: #f5f5f5; border-bottom: 2px solid #ddd;">
+                <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Date</th>
+                <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Clock In</th>
+                <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Clock Out</th>
+                <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Hours</th>
+                <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+    };
+
+    const buildClockHistoryRowHtml = (c) => {
+      const lateStyle = isClockInLate(c) ? 'color: #dc3545; font-weight: bold;' : '';
+      const earlyStyle = isClockOutEarly(c) ? 'color: #dc3545; font-weight: bold;' : '';
+
+      const clockOutText = c.clockOut ? formatTime(c.clockOut) : '-';
+      const hoursText = c.hoursWorked ? decimalToHHMM(c.hoursWorked) : '-';
+
+      return `
+        <tr style="border-bottom: 1px solid #ddd;">
+          <td style="padding: 8px; border: 1px solid #ddd;">${formatDate(c.clockIn)}</td>
+          <td style="padding: 8px; border: 1px solid #ddd; ${lateStyle}">${formatTime(c.clockIn)}</td>
+          <td style="padding: 8px; border: 1px solid #ddd; ${earlyStyle}">${clockOutText}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${hoursText}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;"><span style="background-color: #e7f3ff; padding: 2px 6px; border-radius: 3px;">${getClockStatus(c)}</span></td>
+        </tr>
+      `;
+    };
+
+    const buildClockHistoryTableFooterHtml = () => {
+      return `
+            </tbody>
+          </table>
+        </div>
+      `;
+    };
+
+    const buildUserPdfHtml = () => {
+      const d = kpiData.value;
+      if (!d) return '';
+
+      let html = buildUserSummaryCardsHtml(d);
+
+      if (clockHistory.value.length > 0) {
+        html += buildClockHistoryTableHeaderHtml();
+        for (const c of clockHistory.value.slice(0, 30)) {
+          html += buildClockHistoryRowHtml(c);
+        }
+        html += buildClockHistoryTableFooterHtml();
+      }
+
+      return html;
+    };
+
+    const buildTeamTableHeaderHtml = () => {
+      return `
+        <div style="margin-bottom: 20px;">
+          <h2 style="font-size: 18px; margin-bottom: 15px;">Team Performance</h2>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+              <tr style="background-color: #f5f5f5; border-bottom: 2px solid #ddd;">
+                <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Employee</th>
+                <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">On Time / Total</th>
+                <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Lateness Rate</th>
+                <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Avg Hours</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+    };
+
+    const buildTeamRowHtml = (r) => {
+      const bg = getLatenessBgColor(r.lateness);
+      return `
+        <tr style="border-bottom: 1px solid #ddd;">
+          <td style="padding: 8px; border: 1px solid #ddd;"><strong>${r.user.firstname} ${r.user.lastname}</strong></td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${r.lateness.onTimeDays} / ${r.lateness.totalDays}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">
+            <span style="background-color: ${bg}; padding: 2px 6px; border-radius: 3px;">
+              ${getLatenessPercentage(r.lateness)}%
+            </span>
+          </td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${decimalToHHMM(getAvgHours(r.hours))}</td>
+        </tr>
+      `;
+    };
+
+    const buildTeamTableFooterHtml = () => {
+      return `
+            </tbody>
+          </table>
+        </div>
+      `;
+    };
+
+    const buildTeamPdfHtml = () => {
+      if (!teamResults.value) return '';
+      let html = buildTeamTableHeaderHtml();
+      for (const r of teamResults.value) {
+        html += buildTeamRowHtml(r);
+      }
+      html += buildTeamTableFooterHtml();
+      return html;
+    };
+
+    const buildReportHtml = () => {
+      let html = buildPdfHeaderHtml();
+
+      if (scope.value === 'user' && kpiData.value) {
+        html += buildUserPdfHtml();
+      } else if (teamResults.value) {
+        html += buildTeamPdfHtml();
+      }
+
+      return html;
+    };
+
     const exportPdf = async () => {
       try {
-        const container = document.createElement('div');
-        container.style.backgroundColor = '#fff';
-        container.style.padding = '20px';
-        container.style.fontFamily = 'system-ui, -apple-system, sans-serif';
-
-        let html = `
-          <div style="margin-bottom: 20px;">
-            <h1 style="font-size: 24px; margin-bottom: 10px;">Performance Metrics Report</h1>
-            <p style="color: #666; font-size: 14px;">Period: ${startDate.value} to ${endDate.value}</p>
-          </div>
-        `;
-
-        if (scope.value === 'user' && kpiData.value) {
-          const d = kpiData.value;
-          html += `
-            <div style="margin-bottom: 20px;">
-              <h2 style="font-size: 18px; margin-bottom: 10px;">${d.user.firstname} ${d.user.lastname}</h2>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                <div style="padding: 15px; border: 1px solid #ddd; border-radius: 5px;">
-                  <h3 style="font-size: 14px; color: #666; margin-bottom: 10px;">Attendance</h3>
-                  <p style="font-size: 12px; margin: 5px 0;">On time: <strong>${d.lateness.onTimeDays}/${d.lateness.totalDays} days</strong></p>
-                  <p style="font-size: 12px; margin: 5px 0;">Lateness rate: <strong>${getLatenessPercentage(d.lateness)}%</strong></p>
-                </div>
-                <div style="padding: 15px; border: 1px solid #ddd; border-radius: 5px;">
-                  <h3 style="font-size: 14px; color: #666; margin-bottom: 10px;">Hours Worked</h3>
-                  <p style="font-size: 12px; margin: 5px 0;">Total hours: <strong>${decimalToHHMM(d.hours.total)}</strong></p>
-                  <p style="font-size: 12px; margin: 5px 0;">Average daily: <strong>${decimalToHHMM(getAvgHours(d.hours))}</strong></p>
-                </div>
-              </div>
-            </div>
-          `;
-
-          if (clockHistory.value.length > 0) {
-            html += `
-              <div style="margin-bottom: 20px;">
-                <h3 style="font-size: 16px; margin-bottom: 10px;">Clock History</h3>
-                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                  <thead>
-                    <tr style="background-color: #f5f5f5; border-bottom: 2px solid #ddd;">
-                      <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Date</th>
-                      <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Clock In</th>
-                      <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Clock Out</th>
-                      <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Hours</th>
-                      <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-            `;
-
-            for (const c of clockHistory.value.slice(0, 30)) {
-              const lateStyle = isClockInLate(c) ? 'color: #dc3545; font-weight: bold;' : '';
-              const earlyStyle = isClockOutEarly(c) ? 'color: #dc3545; font-weight: bold;' : '';
-
-              html += `
-                <tr style="border-bottom: 1px solid #ddd;">
-                  <td style="padding: 8px; border: 1px solid #ddd;">${formatDate(c.clockIn)}</td>
-                  <td style="padding: 8px; border: 1px solid #ddd; ${lateStyle}">${formatTime(c.clockIn)}</td>
-                  <td style="padding: 8px; border: 1px solid #ddd; ${earlyStyle}">${c.clockOut ? formatTime(c.clockOut) : '-'}</td>
-                  <td style="padding: 8px; border: 1px solid #ddd;">${c.hoursWorked ? decimalToHHMM(c.hoursWorked) : '-'}</td>
-                  <td style="padding: 8px; border: 1px solid #ddd;"><span style="background-color: #e7f3ff; padding: 2px 6px; border-radius: 3px;">${getClockStatus(c)}</span></td>
-                </tr>
-              `;
-            }
-
-            html += `
-                  </tbody>
-                </table>
-              </div>
-            `;
-          }
-        } else if (teamResults.value) {
-          html += `
-            <div style="margin-bottom: 20px;">
-              <h2 style="font-size: 18px; margin-bottom: 15px;">Team Performance</h2>
-              <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                <thead>
-                  <tr style="background-color: #f5f5f5; border-bottom: 2px solid #ddd;">
-                    <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Employee</th>
-                    <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">On Time / Total</th>
-                    <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Lateness Rate</th>
-                    <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Avg Hours</th>
-                  </tr>
-                </thead>
-                <tbody>
-          `;
-
-          for (const r of teamResults.value) {
-            const bg = getLatenessBgColor(r.lateness);
-            html += `
-              <tr style="border-bottom: 1px solid #ddd;">
-                <td style="padding: 8px; border: 1px solid #ddd;"><strong>${r.user.firstname} ${r.user.lastname}</strong></td>
-                <td style="padding: 8px; border: 1px solid #ddd;">${r.lateness.onTimeDays} / ${r.lateness.totalDays}</td>
-                <td style="padding: 8px; border: 1px solid #ddd;">
-                  <span style="background-color: ${bg}; padding: 2px 6px; border-radius: 3px;">
-                    ${getLatenessPercentage(r.lateness)}%
-                  </span>
-                </td>
-                <td style="padding: 8px; border: 1px solid #ddd;">${decimalToHHMM(getAvgHours(r.hours))}</td>
-              </tr>
-            `;
-          }
-
-          html += `
-                </tbody>
-              </table>
-            </div>
-          `;
-        }
-
-        container.innerHTML = html;
+        const container = buildPdfContainer();
+        container.innerHTML = buildReportHtml();
         document.body.appendChild(container);
 
         const canvas = await html2canvas(container);
 
-        // FIX SONAR: prefer childNode.remove()
+        // prefer childNode.remove()
         container.remove();
 
         const imgData = canvas.toDataURL('image/png');

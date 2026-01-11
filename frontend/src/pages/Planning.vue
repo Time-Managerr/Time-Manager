@@ -65,13 +65,23 @@
             </div>
 
             <div class="mt-2">
-              <label class="small">Start</label>
-              <input v-model="startTimeStr" type="time" class="form-control form-control-sm" />
+              <label class="small" for="planning-start-time">Start</label>
+              <input
+                id="planning-start-time"
+                v-model="startTimeStr"
+                type="time"
+                class="form-control form-control-sm"
+              />
             </div>
 
             <div class="mt-2">
-              <label class="small">End</label>
-              <input v-model="endTimeStr" type="time" class="form-control form-control-sm" />
+              <label class="small" for="planning-end-time">End</label>
+              <input
+                id="planning-end-time"
+                v-model="endTimeStr"
+                type="time"
+                class="form-control form-control-sm"
+              />
             </div>
 
             <div v-if="selectedDateError" class="text-danger small mt-2">{{ selectedDateError }}</div>
@@ -90,11 +100,18 @@
 
         <!-- Manager: select a user to view/edit -->
         <div v-if="isManager" class="mb-3">
-          <label class="small">Selected user</label>
-          <select class="form-select form-select-sm" v-model="selectedUserId" @change="() => fetchPlannings(selectedUserId)">
+          <label class="small" for="planning-selected-user">Selected user</label>
+          <select
+            id="planning-selected-user"
+            class="form-select form-select-sm"
+            v-model="selectedUserId"
+            @change="() => fetchPlannings(selectedUserId)"
+          >
             <option :value="currentUser.id">Myself ({{ currentUser.firstname || 'You' }})</option>
             <optgroup label="Team members">
-              <option v-for="member in (userTeams.flatMap(t => t.members) || [])" :key="member.id" :value="member.id">{{ member.name }}</option>
+              <option v-for="member in (userTeams.flatMap(t => t.members) || [])" :key="member.id" :value="member.id">
+                {{ member.name }}
+              </option>
             </optgroup>
           </select>
         </div>
@@ -103,7 +120,7 @@
           <div v-if="userTeams.length === 0" class="text-muted small p-3 text-center">
             No teams yet
           </div>
-          
+
           <div v-for="team in userTeams" :key="team.id" class="team-block">
             <details open>
               <summary>{{ team.name }}</summary>
@@ -142,7 +159,7 @@ onMounted(() => {
   timerId = setInterval(() => {
     now.value = new Date();
   }, 1000);
-  
+
   // Charger les teams et plannings
   fetchUserTeams();
   fetchPlannings();
@@ -249,18 +266,38 @@ const fetchPlannings = async (forUserId = null) => {
       const dateStr = d.toISOString().split('T')[0];
       // idx is the day of week (0=Monday, 6=Sunday)
       const p = plansByDayOfWeek[idx];
+
       if (p) {
         const start = new Date(p.startTime);
         const end = new Date(p.endTime);
         // Use UTC methods to avoid timezone conversion issues
         const startHour = start.getUTCHours() + start.getUTCMinutes()/60;
         const duration = (end - start) / (1000 * 60 * 60);
-        evts.push({ id: p.idPlanning, title: 'Day Shift', dayIndex: idx, startHour, durationHours: Math.max(0.25, duration), isDefault: false, planId: p.idPlanning, date: dateStr });
-      } else {
+        evts.push({
+          id: p.idPlanning,
+          title: 'Day Shift',
+          dayIndex: idx,
+          startHour,
+          durationHours: Math.max(0.25, duration),
+          isDefault: false,
+          planId: p.idPlanning,
+          date: dateStr
+        });
+        return;
+      }
+
+      // ✅ Sonar: avoid "else { if (...) }" -> single condition
+      if (idx <= 4) {
         // Default 9-17 Mon-Fri if no template defined
-        if (idx <= 4) {
-          evts.push({ id: `default-${dateStr}`, title: 'Day Shift', dayIndex: idx, startHour: 9, durationHours: 8, isDefault: true, date: dateStr });
-        }
+        evts.push({
+          id: `default-${dateStr}`,
+          title: 'Day Shift',
+          dayIndex: idx,
+          startHour: 9,
+          durationHours: 8,
+          isDefault: true,
+          date: dateStr
+        });
       }
     });
 
@@ -301,10 +338,17 @@ async function savePlan() {
     selectedDateError.value = '';
     if (!selectedDate.value) return;
 
-    if (!startTimeStr.value || !endTimeStr.value) { selectedDateError.value = 'Please provide both start and end times.'; return; }
+    if (!startTimeStr.value || !endTimeStr.value) {
+      selectedDateError.value = 'Please provide both start and end times.';
+      return;
+    }
+
     const startISO = `${selectedDate.value}T${startTimeStr.value}:00`;
     const endISO = `${selectedDate.value}T${endTimeStr.value}:00`;
-    if (new Date(endISO) <= new Date(startISO)) { selectedDateError.value = 'End time must be after start time.'; return; }
+    if (new Date(endISO) <= new Date(startISO)) {
+      selectedDateError.value = 'End time must be after start time.';
+      return;
+    }
 
     const userId = selectedUserId.value || currentUser.id;
 
@@ -326,6 +370,7 @@ async function savePlan() {
     selectedDateError.value = getErrorMessage(error);
   }
 }
+
 const hours = Array.from({ length: 12 }, (_, i) => `${8 + i}:00`);
 
 // Helper: return events for a given day index

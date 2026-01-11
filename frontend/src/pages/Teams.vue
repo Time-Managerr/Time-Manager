@@ -225,13 +225,7 @@
               </div>
 
               <div class="d-flex gap-2 align-items-center">
-                <!-- ✅ label associé -->
-                <label
-                  class="small text-muted"
-                  :for="`planning-start-${dayPlan.idPlanning ?? index}`"
-                >
-                  Start
-                </label>
+                <label class="small text-muted" :for="`planning-start-${dayPlan.idPlanning ?? index}`">Start</label>
                 <input
                   :id="`planning-start-${dayPlan.idPlanning ?? index}`"
                   type="time"
@@ -239,13 +233,7 @@
                   class="form-control form-control-sm"
                 />
 
-                <!-- ✅ label associé -->
-                <label
-                  class="small text-muted"
-                  :for="`planning-end-${dayPlan.idPlanning ?? index}`"
-                >
-                  End
-                </label>
+                <label class="small text-muted" :for="`planning-end-${dayPlan.idPlanning ?? index}`">End</label>
                 <input
                   :id="`planning-end-${dayPlan.idPlanning ?? index}`"
                   type="time"
@@ -307,7 +295,6 @@
 
         <form @submit.prevent="submitCreateTeam">
           <div class="mb-3">
-            <!-- ✅ label associé -->
             <label class="form-label fw-semibold" for="team-name">Team Name</label>
             <input
               id="team-name"
@@ -320,7 +307,6 @@
           </div>
 
           <div class="mb-3">
-            <!-- ✅ label associé -->
             <label class="form-label fw-semibold" for="team-description">Description</label>
             <textarea
               id="team-description"
@@ -332,9 +318,16 @@
           </div>
 
           <div class="mb-3">
-            <label class="form-label fw-semibold">Add Members</label>
+            <!-- ✅ FIX Sonar L335: label associé à un contrôle (groupe de checkboxes) -->
+            <label id="add-members-label" class="form-label fw-semibold">Add Members</label>
             <small class="text-muted d-block mb-2">Select users to add to the team</small>
-            <div class="border p-3 rounded" style="max-height: 250px; overflow-y: auto;">
+
+            <div
+              class="border p-3 rounded"
+              style="max-height: 250px; overflow-y: auto;"
+              role="group"
+              aria-labelledby="add-members-label"
+            >
               <div v-if="allUsers.length === 0" class="text-muted small text-center py-3">
                 No users available
               </div>
@@ -345,7 +338,6 @@
                   type="checkbox"
                   class="form-check-input"
                 />
-                <!-- ✅ label associé (déjà ok, on garde) -->
                 <label :for="`user-${user.id}`" class="form-check-label">
                   <span class="fw-medium">{{ user.name }}</span>
                   <br />
@@ -377,31 +369,26 @@
 
         <form @submit.prevent="saveMemberChanges">
           <div class="mb-3">
-            <!-- ✅ label associé -->
             <label class="form-label fw-semibold" for="edit-firstname">First name</label>
             <input id="edit-firstname" v-model="editForm.firstname" type="text" class="form-control" required />
           </div>
 
           <div class="mb-3">
-            <!-- ✅ label associé -->
             <label class="form-label fw-semibold" for="edit-lastname">Last name</label>
             <input id="edit-lastname" v-model="editForm.lastname" type="text" class="form-control" required />
           </div>
 
           <div class="mb-3">
-            <!-- ✅ label associé -->
             <label class="form-label fw-semibold" for="edit-email">Email</label>
             <input id="edit-email" v-model="editForm.email" type="email" class="form-control" required />
           </div>
 
           <div class="mb-3">
-            <!-- ✅ label associé -->
             <label class="form-label fw-semibold" for="edit-phone">Phone</label>
             <input id="edit-phone" v-model="editForm.phone" type="text" class="form-control" />
           </div>
 
           <div class="mb-3">
-            <!-- ✅ label associé -->
             <label class="form-label fw-semibold" for="edit-role">Role</label>
             <select id="edit-role" v-model="editForm.profile" class="form-select">
               <option value="manager">Manager</option>
@@ -448,7 +435,6 @@ const fetchTeams = async () => {
     if (user && user.id) {
       const profile = (user.profile || '').toString().toLowerCase();
 
-      // ✅ Sonar: extraction du nested ternary
       if (profile === 'manager') userRole.value = 'manager';
       else if (profile === 'admin') userRole.value = 'admin';
       else userRole.value = 'employee';
@@ -476,12 +462,10 @@ const router = useRouter();
 
 const openViewMemberPopup = async (member) => {
   try {
-    // Fetch full user details to get lateness and other fields
     const data = await usersService.getById(member.id || member.idUser || member.idUser);
     selectedMemberView.value = data;
   } catch (err) {
     console.error('Erreur lors de la récupération du membre:', err);
-    // fallback to the basic member object
     selectedMemberView.value = member;
   }
 };
@@ -496,14 +480,12 @@ const goToClocksHistory = (userId) => {
 
 const openEditMemberPopup = (member) => {
   selectedMemberEdit.value = member;
-  // Split full name into firstname / lastname for the edit form
   const parts = (member.name || '').trim().split(' ');
   editForm.value = {
     firstname: parts.shift() || '',
     lastname: parts.join(' ') || '',
     email: member.email || '',
     phone: member.phone || '',
-    // Normalize profile to lowercase values used by the backend
     profile: (member.role || 'employee').toString().toLowerCase()
   };
 };
@@ -516,7 +498,6 @@ const closeEditMemberPopup = () => {
 import planningService from '../services/planningService.js';
 
 const openPlanningPopup = async (member) => {
-  // Prevent managers from editing plannings of other managers or admins
   const role = (member.role || '').toString().toLowerCase();
   if (role === 'manager' || role === 'admin') {
     toast.warning('You cannot edit the planning of managers or admins.');
@@ -524,10 +505,8 @@ const openPlanningPopup = async (member) => {
   }
 
   try {
-    // Fetch template plannings for this member (isTemplate=true)
     const templates = await planningService.getByUserId(member.id);
 
-    // Convert to UI format
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const planningsByDay = templates
       .map(t => ({
@@ -554,7 +533,6 @@ const closePlanningPopup = () => {
 };
 
 // Helpers for time/date handling
-// ✅ Sonar: pas de catch "vide" -> on gère les dates invalides sans try/catch
 const timeFromISO = (iso) => {
   if (!iso) return '09:00';
   const d = new Date(iso);
@@ -562,24 +540,11 @@ const timeFromISO = (iso) => {
   return d.toISOString().slice(11, 16);
 };
 
-const formatDateISO = (isoDate) => {
-  const d = new Date(isoDate);
-  return d.toISOString().split('T')[0];
-};
-
-// ✅ Sonar: pas de catch "vide" -> fallback sur input si date invalide
-const formatDateForDisplay = (isoDate) => {
-  const d = new Date(isoDate);
-  if (Number.isNaN(d.getTime())) return isoDate;
-  return new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(d);
-};
-
 const savePlanningsChanges = async () => {
   if (!selectedMemberPlanning.value || !selectedMemberPlanning.value.planningsByDay) return;
   try {
     const updates = [];
 
-    // Update each template planning
     for (const dayPlan of selectedMemberPlanning.value.planningsByDay) {
       updates.push(
         planningService.updatePlanning(dayPlan.idPlanning, {
@@ -608,7 +573,6 @@ const deleteTeam = async (team) => {
   if (confirm(`Êtes-vous sûr de vouloir supprimer l'équipe "${team.name}" ?`)) {
     try {
       await teamsService.deleteTeam(team.id);
-      // Rafraîchir la liste des équipes
       await fetchTeams();
       toast.success('Team deleted successfully!');
     } catch (error) {
@@ -618,11 +582,18 @@ const deleteTeam = async (team) => {
   }
 };
 
+/**
+ * ✅ FIX Sonar L658: remplace l’IIFE par une fonction lisible
+ */
+function pickUserUpdatePayload(payload) {
+  const { firstname, lastname, email, phone, profile } = payload;
+  return { firstname, lastname, email, phone, profile };
+}
+
 const saveMemberChanges = async () => {
   try {
     if (!selectedMemberEdit.value) return;
 
-    // Basic client-side permission check: managers cannot edit other managers/admins
     const currentUser = JSON.parse(localStorage.getItem('user')) || {};
     const currentRole = (currentUser.profile || '').toString().toLowerCase();
     const targetRole = (selectedMemberEdit.value.role || '').toString().toLowerCase();
@@ -637,25 +608,22 @@ const saveMemberChanges = async () => {
 
     const payload = { ...editForm.value };
 
-    // Normalize and sanitize fields
     payload.firstname = (payload.firstname || '').trim();
     payload.lastname = (payload.lastname || '').trim();
     payload.email = (payload.email || '').trim();
 
-    // ✅ Sonar: Number.parseInt plutôt que parseInt
     if (payload.phone !== undefined && payload.phone !== null && String(payload.phone).trim() !== '') {
       payload.phone = Number.parseInt(String(payload.phone).trim(), 10);
     }
 
     payload.profile = (payload.profile || 'employee').toString().toLowerCase();
 
-    // Manager cannot promote someone to admin from the client-side
     if (currentRole === 'manager' && payload.profile === 'admin') {
       toast.warning('You cannot promote a user to admin.');
       return;
     }
 
-    const allowed = (({ firstname, lastname, email, phone, profile }) => ({ firstname, lastname, email, phone, profile }))(payload);
+    const allowed = pickUserUpdatePayload(payload);
 
     await usersService.update(selectedMemberEdit.value.id, allowed);
     toast.success('Member updated successfully!');
@@ -670,7 +638,6 @@ const saveMemberChanges = async () => {
 const openCreateTeamPopup = () => {
   showCreateTeamPopup.value = true;
   newTeamForm.value = { name: '', description: '', members: [] };
-  // Charger la liste des utilisateurs
   fetchAllUsers();
 };
 
@@ -678,7 +645,6 @@ const fetchAllUsers = async () => {
   try {
     const users = await teamsService.getAllUsers();
     const currentUser = JSON.parse(localStorage.getItem('user'));
-    // Afficher tous les utilisateurs sauf l'utilisateur connecté
     allUsers.value = users
       .filter(u => u.idUser !== currentUser.id)
       .map(u => ({
@@ -718,25 +684,30 @@ function getAvatarColor(name) {
   if (!name) return { from: '#6c757d', to: '#495057' };
 
   const colors = [
-    { from: '#1b93b1', to: '#2ca9bc' }, // Teal
-    { from: '#e74c3c', to: '#c0392b' }, // Red
-    { from: '#3498db', to: '#2980b9' }, // Blue
-    { from: '#2ecc71', to: '#27ae60' }, // Green
-    { from: '#f39c12', to: '#e67e22' }, // Orange
-    { from: '#9b59b6', to: '#8e44ad' }, // Purple
-    { from: '#1abc9c', to: '#16a085' }, // Turquoise
-    { from: '#e91e63', to: '#c2185b' }, // Pink
-    { from: '#ff9800', to: '#f57c00' }, // Amber
-    { from: '#607d8b', to: '#455a64' }  // Blue Grey
+    { from: '#1b93b1', to: '#2ca9bc' },
+    { from: '#e74c3c', to: '#c0392b' },
+    { from: '#3498db', to: '#2980b9' },
+    { from: '#2ecc71', to: '#27ae60' },
+    { from: '#f39c12', to: '#e67e22' },
+    { from: '#9b59b6', to: '#8e44ad' },
+    { from: '#1abc9c', to: '#16a085' },
+    { from: '#e91e63', to: '#c2185b' },
+    { from: '#ff9800', to: '#f57c00' },
+    { from: '#607d8b', to: '#455a64' }
   ];
 
-  // ✅ Sonar: codePointAt plutôt que charCodeAt
+  // ✅ FIX Sonar L739: éviter l’assignation manuelle de i (i += 1)
+  // On itère proprement sur les code points pour gérer les surrogates.
   let hash = 0;
-  for (let i = 0; i < name.length; i++) {
+  let i = 0;
+  while (i < name.length) {
     const cp = name.codePointAt(i);
-    if (cp === undefined) continue;
-    hash = cp + ((hash << 5) - hash);
-    if (cp > 0xffff) i += 1; // sauter le surrogate pair
+    if (cp !== undefined) {
+      hash = cp + ((hash << 5) - hash);
+      i += cp > 0xffff ? 2 : 1;
+    } else {
+      i++;
+    }
   }
 
   const index = Math.abs(hash) % colors.length;
@@ -751,7 +722,6 @@ const submitCreateTeam = async () => {
       return;
     }
 
-    // Récupérer les IDs des utilisateurs sélectionnés
     const selectedMemberIds = allUsers.value
       .filter(u => u.selected)
       .map(u => u.id);
@@ -772,7 +742,6 @@ const submitCreateTeam = async () => {
 
     toast.success('Team created successfully!');
     closeCreateTeamPopup();
-    // Rafraîchir la liste des équipes
     await fetchTeams();
   } catch (error) {
     console.error('Erreur lors de la création:', error);
@@ -780,7 +749,6 @@ const submitCreateTeam = async () => {
   }
 };
 
-// Charger les données au montage du composant
 onMounted(() => {
   fetchTeams();
 });

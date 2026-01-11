@@ -149,7 +149,9 @@ export default {
   async getAllUsers(req, res) {
     try {
       const decodedUser = await decodeUserFromAuth(req);
-      if (decodedUser && decodedUser.__jwtError) {
+
+      // ✅ Sonar: optional chaining
+      if (decodedUser?.__jwtError) {
         console.error("getAllUsers: token decode fallback failed", decodedUser.__jwtError.message);
         return res.status(403).json({ error: "Token invalide ou expiré." });
       }
@@ -194,7 +196,9 @@ export default {
 
       // Sonar: authPreview unused + nested ternary -> removed entirely
       const decodedUser = await decodeUserFromAuth(req);
-      if (decodedUser && decodedUser.__jwtError) {
+
+      // ✅ Sonar: optional chaining
+      if (decodedUser?.__jwtError) {
         console.error("getUserById: token decode fallback failed", decodedUser.__jwtError.message);
         return res.status(403).json({ error: "Token invalide ou expiré." });
       }
@@ -212,7 +216,9 @@ export default {
         if (access.allowed) return res.json(user);
       } catch (err) {
         console.error("Error during manager membership check (getUserById):", err);
-        return res.status(500).json({ error: "Erreur serveur lors de la vérification des permissions." });
+        return res
+          .status(500)
+          .json({ error: "Erreur serveur lors de la vérification des permissions." });
       }
 
       return res.status(403).json({ error: "Accès refusé." });
@@ -233,7 +239,9 @@ export default {
       }
 
       const decodedUser = await decodeUserFromAuth(req);
-      if (decodedUser && decodedUser.__jwtError) {
+
+      // ✅ Sonar: optional chaining
+      if (decodedUser?.__jwtError) {
         console.error("updateUser: token decode fallback failed", decodedUser.__jwtError.message);
         return res.status(403).json({ error: "Token invalide ou expiré." });
       }

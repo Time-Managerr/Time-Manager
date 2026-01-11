@@ -134,7 +134,7 @@
 
             <p class="my-3 text-center fst-italic">Clock in before starting your work.</p>
 
-            <!-- FIX SONAR: <a role="button"> -> <button> -->
+          
             <button type="button" class="btn btn-success">
               Start
             </button>
@@ -173,7 +173,7 @@
 
             <p class="my-3 text-center fst-italic">Recent activities or tasks.</p>
 
-            <!-- FIX SONAR: <a role="button"> -> <button> -->
+            
             <button type="button" class="btn btn-success bg-danger">
               Clock out
             </button>

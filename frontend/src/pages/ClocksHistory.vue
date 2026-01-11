@@ -28,8 +28,12 @@
             <tr v-for="c in clocks" :key="c.idClock">
               <td>{{ formatDate(c.clockIn) }}</td>
               <td :class="c.late ? 'text-danger' : 'text-success'">{{ formatTime(c.clockIn) }}</td>
-              <td :class="c.earlyLeave ? 'text-danger' : (c.clockOut ? 'text-success' : '')">{{ c.clockOut ? formatTime(c.clockOut) : '-' }}</td>
-              <td :class="c.shortDay ? 'text-danger' : (c.hoursWorked >= 8 ? 'text-success' : '')">{{ c.hoursWorked ?? '-' }}</td>
+              <td :class="c.earlyLeave ? 'text-danger' : (c.clockOut ? 'text-success' : '')">
+                {{ c.clockOut ? formatTime(c.clockOut) : '-' }}
+              </td>
+              <td :class="c.shortDay ? 'text-danger' : (c.hoursWorked >= 8 ? 'text-success' : '')">
+                {{ c.hoursWorked ?? '-' }}
+              </td>
               <td>
                 <span v-if="c.late" class="badge bg-danger me-1">Late</span>
                 <span v-if="c.earlyLeave" class="badge bg-danger me-1">Early leave</span>
@@ -39,7 +43,9 @@
           </tbody>
         </table>
 
-        <div v-if="clocks.length === 0" class="text-center text-muted py-4">No clocks recorded for this user.</div>
+        <div v-if="clocks.length === 0" class="text-center text-muted py-4">
+          No clocks recorded for this user.
+        </div>
       </div>
     </div>
   </main>
@@ -53,6 +59,7 @@ import usersService from '../services/usersService.js';
 
 const route = useRoute();
 const userId = route.params.userId;
+
 const clocks = ref([]);
 const user = ref(null);
 const userName = ref('');
@@ -74,23 +81,22 @@ const fetchData = async () => {
 
 onMounted(fetchData);
 
+
 const formatTime = (iso) => {
   if (!iso) return '-';
-  try {
-    return (() => {
-      const d = new Date(iso);
-      const hours = String(d.getUTCHours()).padStart(2, '0');
-      const minutes = String(d.getUTCMinutes()).padStart(2, '0');
-      return `${hours}:${minutes}`;
-    })();
-  } catch (e) { return '-'; }
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '-';
+
+  const hours = String(d.getUTCHours()).padStart(2, '0');
+  const minutes = String(d.getUTCMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
 };
 
 const formatDate = (iso) => {
   if (!iso) return '-';
-  try {
-    return new Date(iso).toLocaleDateString();
-  } catch (e) { return '-'; }
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '-';
+  return d.toLocaleDateString();
 };
 </script>
 

@@ -27,7 +27,7 @@ api.interceptors.response.use(
       // Token expiré, nettoyer et rediriger vers login
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      globalThis.location.href = '/login';
     }
     return Promise.reject(error);
   }

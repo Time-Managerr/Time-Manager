@@ -4,12 +4,22 @@ import { app } from "../../app.js";
 describe("KPI Management - Backend Tests", () => {
   let adminToken;
 
-  // Use existing test users from the database (if they exist)
-  // Based on the login tests, these users exist
-  const adminEmail = "eldjsalim@gmail.com";
-  const adminPassword = "Password1!";
+  // ✅ Sonar Security Hotspot: no hard-coded credentials in source code
+  // Provide these via environment variables in CI / local dev:
+  //   TEST_ADMIN_EMAIL=...
+  //   TEST_ADMIN_PASSWORD=...
+  const adminEmail = process.env.TEST_ADMIN_EMAIL;
+  const adminPassword = process.env.TEST_ADMIN_PASSWORD;
 
   beforeAll(async () => {
+    // If credentials are not provided, we cannot login => tests that require adminToken will be skipped
+    if (!adminEmail || !adminPassword) {
+      console.warn(
+        "Skipping admin login: TEST_ADMIN_EMAIL / TEST_ADMIN_PASSWORD not provided"
+      );
+      return;
+    }
+
     // Get tokens for existing users
     const adminLogin = await request(app).post("/auth/login").send({
       email: adminEmail,
@@ -213,11 +223,10 @@ describe("KPI Management - Backend Tests", () => {
       if (response.statusCode === 200) {
         expect(response.body).toHaveProperty("start");
         expect(response.body).toHaveProperty("end");
-        // Verify defaults are reasonable (within last 30 days)
         const startDate = new Date(response.body.start);
         const endDate = new Date(response.body.end);
         const daysDiff = (endDate - startDate) / (1000 * 60 * 60 * 24);
-        expect(daysDiff).toBeLessThanOrEqual(35); // default is ~30 days
+        expect(daysDiff).toBeLessThanOrEqual(35);
       }
     });
   });
@@ -251,7 +260,6 @@ describe("KPI Management - Backend Tests", () => {
           targetUserId: 1,
         });
 
-      // Should either succeed (201) or fail with proper error (not 401)
       expect(response.statusCode).not.toBe(401);
       if (response.statusCode === 201) {
         expect(response.body).toHaveProperty("id");
@@ -343,7 +351,6 @@ describe("KPI Management - Backend Tests", () => {
   describe("GET /kpis - List KPIs", () => {
     it("should reject list request without authentication", async () => {
       const response = await request(app).get("/kpis");
-
       expect(response.statusCode).toBe(401);
     });
 
@@ -381,7 +388,6 @@ describe("KPI Management - Backend Tests", () => {
           end: now,
         });
 
-      // Should not crash, either succeeds or returns valid error
       expect([200, 400, 404, 500]).toContain(response.statusCode);
       if (response.statusCode === 200) {
         expect(response.body.lateness.totalDays).toBe(0);
@@ -404,7 +410,6 @@ describe("KPI Management - Backend Tests", () => {
           end: new Date().toISOString(),
         });
 
-      // Should either succeed (coerce date) or fail gracefully
       expect([200, 400, 500]).toContain(response.statusCode);
     });
 
@@ -428,7 +433,6 @@ describe("KPI Management - Backend Tests", () => {
         return;
       }
 
-      // Create KPI
       const createResponse = await request(app)
         .post("/kpis")
         .set("Authorization", `Bearer ${adminToken}`)
@@ -440,13 +444,13 @@ describe("KPI Management - Backend Tests", () => {
         });
 
       if (createResponse.statusCode === 201) {
-        // List KPIs
         const listResponse = await request(app)
           .get("/kpis")
           .set("Authorization", `Bearer ${adminToken}`);
 
         expect(listResponse.statusCode).toBe(200);
         expect(Array.isArray(listResponse.body)).toBe(true);
+
         const foundKpi = listResponse.body.find((k) => k.name === "Integration Test KPI");
         expect(foundKpi).toBeDefined();
       }

@@ -119,7 +119,7 @@ describe('Kpis.vue - Scope Selection', () => {
   });
 
   it('should switch to team scope when team button clicked', async () => {
-    const teamButtons = wrapper.findAll('button').filter(btn => 
+    const teamButtons = wrapper.findAll('button').find(btn => 
       btn.text().includes('Équipe')
     );
     await teamButtons[0].trigger('click');
@@ -130,7 +130,7 @@ describe('Kpis.vue - Scope Selection', () => {
   it('should switch to user scope when user button clicked', async () => {
     wrapper.vm.scope = 'team';
     await nextTick();
-    const userButtons = wrapper.findAll('button').filter(btn => 
+    const userButtons = wrapper.findAll('button').find(btn => 
       btn.text().includes('Utilisateur')
     );
     await userButtons[0].trigger('click');
@@ -141,7 +141,7 @@ describe('Kpis.vue - Scope Selection', () => {
   it('should clear results when switching scope', async () => {
     wrapper.vm.results = { some: 'data' };
     await nextTick();
-    const teamButtons = wrapper.findAll('button').filter(btn => 
+    const teamButtons = wrapper.findAll('button').find(btn => 
       btn.text().includes('Équipe')
     );
     await teamButtons[0].trigger('click');
@@ -152,7 +152,7 @@ describe('Kpis.vue - Scope Selection', () => {
   it('should clear error when switching scope', async () => {
     wrapper.vm.error = 'Some error';
     await nextTick();
-    const userButtons = wrapper.findAll('button').filter(btn => 
+    const userButtons = wrapper.findAll('button').find(btn => 
       btn.text().includes('Utilisateur')
     );
     await userButtons[0].trigger('click');

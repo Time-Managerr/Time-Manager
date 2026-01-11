@@ -38,7 +38,8 @@ function buildAuthPreview(authHeader) {
 }
 
 function getAuthHeader(req) {
-  return req.headers?.authorization || null;
+  // ✅ Sonar: optional chaining + nullish coalescing (plus lisible)
+  return req.headers?.authorization ?? null;
 }
 
 function getDecodedUserOrNull(req, authHeader) {

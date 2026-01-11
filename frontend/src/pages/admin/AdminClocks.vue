@@ -2,7 +2,16 @@
   <main class="p-4">
     <h3>Clocks (Admin)</h3>
     <table class="table table-sm">
-      <thead><tr><th>ID</th><th>User</th><th>Clock In</th><th>Clock Out</th><th>Hours</th><th>Actions</th></tr></thead>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>User</th>
+          <th>Clock In</th>
+          <th>Clock Out</th>
+          <th>Hours</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
       <tbody>
         <tr v-for="c in clocks" :key="c.idClock">
           <td>{{ c.idClock }}</td>
@@ -27,8 +36,26 @@ import { useToast } from '../../composables/useToast';
 const toast = useToast();
 
 const clocks = ref([]);
-const fetch = async () => { clocks.value = await clockService.getAll(); };
-const deleteClock = async (id) => { if (!confirm('Delete?')) return; try { await clockService.deleteClock(id); await fetch(); toast.success('Clock deleted successfully'); } catch (e) { console.error(e); toast.error('Error deleting clock'); } };
+
+const fetch = async () => {
+  clocks.value = await clockService.getAll();
+};
+
+const deleteClock = async (id) => {
+  const ok = confirm('Delete?');
+  if (!ok) {
+    return;
+  }
+
+  try {
+    await clockService.deleteClock(id);
+    await fetch();
+    toast.success('Clock deleted successfully');
+  } catch (e) {
+    console.error(e);
+    toast.error('Error deleting clock');
+  }
+};
 
 onMounted(fetch);
 </script>
