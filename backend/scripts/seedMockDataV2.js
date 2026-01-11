@@ -1,5 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
@@ -9,9 +9,15 @@ function isoDate(year, month, day) {
 }
 
 // Random name generators
-const firstNames = ['Jack', 'Sam', 'Paul', 'Kate', 'Olivia', 'Emma', 'Noah', 'Liam', 'Sophia', 'Mason', 'Isabella', 'Ethan', 'Ava', 'Lucas', 'Mia', 'Oliver', 'Charlotte', 'Elijah', 'Amelia', 'James'];
-const lastNames = ['Johnson', 'Xavier', 'Quinn', 'Davis', 'Young', 'Smith', 'Brown', 'Wilson', 'Moore', 'Taylor', 'Anderson', 'Thomas', 'Jackson', 'White', 'Harris', 'Martin', 'Thompson', 'Garcia', 'Martinez', 'Robinson'];
-const teamNames = ['IT', 'Sales', 'Human Resources', 'Finance', 'Marketing'];
+const firstNames = [
+  "Jack", "Sam", "Paul", "Kate", "Olivia", "Emma", "Noah", "Liam", "Sophia", "Mason",
+  "Isabella", "Ethan", "Ava", "Lucas", "Mia", "Oliver", "Charlotte", "Elijah", "Amelia", "James"
+];
+const lastNames = [
+  "Johnson", "Xavier", "Quinn", "Davis", "Young", "Smith", "Brown", "Wilson", "Moore", "Taylor",
+  "Anderson", "Thomas", "Jackson", "White", "Harris", "Martin", "Thompson", "Garcia", "Martinez", "Robinson"
+];
+const teamNames = ["IT", "Sales", "Human Resources", "Finance", "Marketing"];
 
 function randomName() {
   const first = firstNames[Math.floor(Math.random() * firstNames.length)];
@@ -19,13 +25,23 @@ function randomName() {
   return { first, last };
 }
 
-async function main() {
-  console.log('Seeding mock data: wiping all existing data and creating fresh dataset');
-  const now = new Date();
+async function safeDeleteMany(model, label) {
+  try {
+    await model.deleteMany();
+  } catch (err) {
+    // Sonar: handle exception meaningfully (log it)
+    console.warn(`Skipping ${label} deleteMany:`, err?.message || err);
+  }
+}
 
-  // Wipe all data
-  try { await prisma.kpi.deleteMany(); } catch(e) { console.log('Skipping KPI delete'); }
-  try { await prisma.reports.deleteMany(); } catch(e) { console.log('Skipping reports delete'); }
+async function wipeData() {
+  console.log("Seeding mock data: wiping all existing data and creating fresh dataset");
+
+  // Optional tables (may not exist depending on schema version)
+  await safeDeleteMany(prisma.kpi, "kpi");
+  await safeDeleteMany(prisma.reports, "reports");
+
+  // Required tables (should exist)
   await prisma.vacations.deleteMany();
   await prisma.clocks.deleteMany();
   await prisma.plannings.deleteMany();
@@ -33,24 +49,28 @@ async function main() {
   await prisma.teams.deleteMany();
   await prisma.userRoles.deleteMany();
   await prisma.users.deleteMany();
+}
 
-  // Step 1: Create admin
-  const hashedPassword = await bcrypt.hash('Password1!', 10);
+async function createAdmin(hashedPassword) {
   const admin = await prisma.users.create({
     data: {
-      firstname: 'Admin',
-      lastname: 'User',
-      email: 'admin@gmail.com',
+      firstname: "Admin",
+      lastname: "User",
+      email: "admin@gmail.com",
       password: hashedPassword,
       phone: 1234567890,
-      profile: 'admin'
-    }
+      profile: "admin",
+    },
   });
-  console.log('Created admin: admin@gmail.com');
 
-  // Step 2: Create teams with managers and employees
+  console.log("Created admin: admin@gmail.com");
+  return admin;
+}
+
+async function createTeamsAndUsers(hashedPassword) {
   const teamsData = [];
-  for (let t = 0; t < 5; t++) {
+
+  for (let t = 0; t < teamNames.length; t++) {
     const managerName = randomName();
     const manager = await prisma.users.create({
       data: {
@@ -59,16 +79,16 @@ async function main() {
         email: `manager${t + 1}@gmail.com`,
         password: hashedPassword,
         phone: 1234567890 + t,
-        profile: 'manager'
-      }
+        profile: "manager",
+      },
     });
 
     const team = await prisma.teams.create({
       data: {
         name: teamNames[t],
         description: `${teamNames[t]} department`,
-        managerId: manager.idUser
-      }
+        managerId: manager.idUser,
+      },
     });
 
     const employees = [];
@@ -80,66 +100,69 @@ async function main() {
           lastname: empName.last,
           email: `${empName.first.toLowerCase()}.${empName.last.toLowerCase()}${t}${e}@company.com`,
           password: hashedPassword,
-          phone: 2000000000 + (t * 100) + e,
-          profile: 'employee'
-        }
+          phone: 2000000000 + t * 100 + e,
+          profile: "employee",
+        },
       });
+
       await prisma.teamUser.create({ data: { teamId: team.idTeam, userId: emp.idUser } });
       employees.push(emp);
     }
 
     teamsData.push({ team, manager, employees });
-    console.log(`Created ${team.name} team with manager ${manager.firstname} ${manager.lastname} and 10 employees`);
+    console.log(
+      `Created ${team.name} team with manager ${manager.firstname} ${manager.lastname} and 10 employees`
+    );
   }
 
-  const allUsers = [admin, ...teamsData.flatMap(t => [t.manager, ...t.employees])];
-  const allEmployees = teamsData.flatMap(t => [t.manager, ...t.employees]);
+  return teamsData;
+}
 
-  // Step 3: Create template plannings (Mon-Fri, 09:00-17:00) for all users
+async function createTemplatePlannings(users) {
   const allPlannings = [];
-  for (const u of allUsers) {
-    if (u.profile === 'admin') continue;
-    
-    // Create templates for Monday-Friday (dayOfWeek 0-4)
+
+  for (const u of users) {
+    if (u.profile === "admin") continue;
+
     for (let dayOfWeek = 0; dayOfWeek < 5; dayOfWeek++) {
-      const startTime = new Date('1970-01-01T09:00:00Z');
-      const endTime = new Date('1970-01-01T17:00:00Z');
-      
-      const planning = await prisma.plannings.create({ 
-        data: { 
-          userId: u.idUser, 
+      const startTime = new Date("1970-01-01T09:00:00Z");
+      const endTime = new Date("1970-01-01T17:00:00Z");
+
+      const planning = await prisma.plannings.create({
+        data: {
+          userId: u.idUser,
           isTemplate: true,
           dayOfWeek,
           date: null,
-          startTime, 
-          endTime 
-        } 
+          startTime,
+          endTime,
+        },
       });
+
       allPlannings.push(planning);
     }
   }
-  console.log(`Created template plannings (Mon-Fri 09:00-17:00) for all users`);
 
-  // Step 4: Generate realistic clock entries with employee behavior profiles
-  console.log('Generating realistic clock entries with varied employee profiles...');
-  const startGenDate = new Date('2025-12-01');
-  const endGenDate = new Date('2026-01-09');
-  
-  // Define employee behavior profiles
+  console.log("Created template plannings (Mon-Fri 09:00-17:00) for all users");
+  return allPlannings;
+}
+
+function buildEmployeeProfiles(allEmployees) {
+  // Sonar: remove zero fractions (0.30 -> 0.3, 0.10 -> 0.1, etc.)
   const profiles = [
-    { type: 'ideal', weight: 0.15 }, // 15% ideal employees
-    { type: 'punctual', weight: 0.30 }, // 30% mostly on time
-    { type: 'sometimes_late', weight: 0.25 }, // 25% occasionally late
-    { type: 'frequently_late', weight: 0.15 }, // 15% often late
-    { type: 'early_leaver', weight: 0.10 }, // 10% leaves early
-    { type: 'inconsistent', weight: 0.05 } // 5% very inconsistent
+    { type: "ideal", weight: 0.15 },          // 15% ideal employees
+    { type: "punctual", weight: 0.3 },        // 30% mostly on time
+    { type: "sometimes_late", weight: 0.25 }, // 25% occasionally late
+    { type: "frequently_late", weight: 0.15 },// 15% often late
+    { type: "early_leaver", weight: 0.1 },    // 10% leaves early
+    { type: "inconsistent", weight: 0.05 },   // 5% very inconsistent
   ];
 
-  // Assign profiles to employees
   const employeeProfiles = new Map();
   for (const employee of allEmployees) {
     let cumulative = 0;
     const rand = Math.random();
+
     for (const profile of profiles) {
       cumulative += profile.weight;
       if (rand <= cumulative) {
@@ -149,132 +172,197 @@ async function main() {
     }
   }
 
+  return employeeProfiles;
+}
+
+function computeClockInOutForProfile({ profileType, baseClockIn, baseClockOut }) {
+  const clockIn = new Date(baseClockIn);
+  const clockOut = new Date(baseClockOut);
+
+  switch (profileType) {
+    case "ideal":
+      clockIn.setMinutes(clockIn.getMinutes() - (3 + Math.floor(Math.random() * 5)));
+      clockOut.setMinutes(clockOut.getMinutes() + (5 + Math.floor(Math.random() * 6)));
+      break;
+
+    case "punctual":
+      clockIn.setMinutes(clockIn.getMinutes() - Math.floor(Math.random() * 6));
+      clockOut.setMinutes(clockOut.getMinutes() + Math.floor(Math.random() * 6));
+      break;
+
+    case "sometimes_late":
+      if (Math.random() < 0.3) {
+        clockIn.setMinutes(clockIn.getMinutes() + (5 + Math.floor(Math.random() * 16)));
+      } else {
+        clockIn.setMinutes(clockIn.getMinutes() - Math.floor(Math.random() * 3));
+      }
+      clockOut.setMinutes(clockOut.getMinutes() + Math.floor(Math.random() * 5));
+      break;
+
+    case "frequently_late":
+      if (Math.random() < 0.6) {
+        clockIn.setMinutes(clockIn.getMinutes() + (10 + Math.floor(Math.random() * 21)));
+      } else {
+        clockIn.setMinutes(clockIn.getMinutes() + Math.floor(Math.random() * 5));
+      }
+      clockOut.setMinutes(clockOut.getMinutes() + Math.floor(Math.random() * 3));
+      break;
+
+    case "early_leaver":
+      clockIn.setMinutes(clockIn.getMinutes() - Math.floor(Math.random() * 3));
+      if (Math.random() < 0.4) {
+        clockOut.setMinutes(clockOut.getMinutes() - (10 + Math.floor(Math.random() * 21)));
+      }
+      break;
+
+    case "inconsistent":
+      if (Math.random() < 0.5) {
+        clockIn.setMinutes(clockIn.getMinutes() + Math.floor(Math.random() * 40));
+      } else {
+        clockIn.setMinutes(clockIn.getMinutes() - Math.floor(Math.random() * 5));
+      }
+
+      if (Math.random() < 0.3) {
+        clockOut.setMinutes(clockOut.getMinutes() - Math.floor(Math.random() * 30));
+      } else {
+        clockOut.setMinutes(clockOut.getMinutes() + Math.floor(Math.random() * 10));
+      }
+      break;
+
+    default:
+      break;
+  }
+
+  return { clockIn, clockOut };
+}
+
+function hoursWorkedFrom(clockIn, clockOut) {
+  const msWorked = clockOut.getTime() - clockIn.getTime();
+  const hoursWorked = msWorked / (1000 * 60 * 60);
+
+  // Sonar: prefer Number.parseFloat over parseFloat
+  return Number.parseFloat(hoursWorked.toFixed(2));
+}
+
+function buildProfilesPreview(employeeProfiles, limit = 5) {
+  // Sonar: avoid nested template literals by building strings in steps
+  const entries = Array.from(employeeProfiles.entries()).slice(0, limit);
+  const parts = entries.map(([id, type]) => `User ${id}: ${type}`);
+  return `${parts.join(", ")}...`;
+}
+
+async function generateClockEntries({ allEmployees, allPlannings, employeeProfiles }) {
+  console.log("Generating realistic clock entries with varied employee profiles...");
+
+  const startGenDate = new Date("2025-12-01");
+  const endGenDate = new Date("2026-01-09");
+  const endGenTime = endGenDate.getTime(); // Sonar: endGenDate not modified in loop
+
   const clockEntries = [];
   let currentDate = new Date(startGenDate);
-  
-  while (currentDate <= endGenDate) {
-    const dayOfWeek = (currentDate.getDay() + 6) % 7; // Convert to 0=Monday format
-    
-    if (dayOfWeek >= 0 && dayOfWeek < 5) { // Monday-Friday only
+
+  while (currentDate.getTime() <= endGenTime) {
+    const dayOfWeek = (currentDate.getDay() + 6) % 7; // 0=Monday
+
+    if (dayOfWeek >= 0 && dayOfWeek < 5) {
       for (const employee of allEmployees) {
-        // Get template planning for this day of week
-        const planning = allPlannings.find(p => 
-          p.userId === employee.idUser && p.dayOfWeek === dayOfWeek
+        const planning = allPlannings.find(
+          (p) => p.userId === employee.idUser && p.dayOfWeek === dayOfWeek
         );
-        
-        if (planning) {
-          // Use template start/end times (9:00-17:00 in epoch)
-          const planStart = new Date(planning.startTime);
-          const planEnd = new Date(planning.endTime);
-          const planStartHour = planStart.getUTCHours();
-          const planStartMin = planStart.getUTCMinutes();
-          const planEndHour = planEnd.getUTCHours();
-          const planEndMin = planEnd.getUTCMinutes();
-          
-          const profileType = employeeProfiles.get(employee.idUser) || 'punctual';
-          
-          const clockIn = new Date(currentDate);
-          clockIn.setHours(planStartHour, planStartMin, 0, 0);
-          
-          const clockOut = new Date(currentDate);
-          clockOut.setHours(planEndHour, planEndMin, 0, 0);
-          
-          switch (profileType) {
-            case 'ideal':
-              // Always 3-7 minutes early, leaves 5-10 minutes after
-              clockIn.setMinutes(clockIn.getMinutes() - (3 + Math.floor(Math.random() * 5)));
-              clockOut.setMinutes(clockOut.getMinutes() + (5 + Math.floor(Math.random() * 6)));
-              break;
-            case 'punctual':
-              // On time or 1-5 minutes early, leaves on time or 1-5 minutes after
-              clockIn.setMinutes(clockIn.getMinutes() - Math.floor(Math.random() * 6));
-              clockOut.setMinutes(clockOut.getMinutes() + Math.floor(Math.random() * 6));
-              break;
-            case 'sometimes_late':
-              // 30% chance of being 5-20 minutes late
-              if (Math.random() < 0.3) {
-                clockIn.setMinutes(clockIn.getMinutes() + (5 + Math.floor(Math.random() * 16)));
-              } else {
-                clockIn.setMinutes(clockIn.getMinutes() - Math.floor(Math.random() * 3));
-              }
-              clockOut.setMinutes(clockOut.getMinutes() + Math.floor(Math.random() * 5));
-              break;
-            case 'frequently_late':
-              // 60% chance of being 10-30 minutes late
-              if (Math.random() < 0.6) {
-                clockIn.setMinutes(clockIn.getMinutes() + (10 + Math.floor(Math.random() * 21)));
-              } else {
-                clockIn.setMinutes(clockIn.getMinutes() + Math.floor(Math.random() * 5));
-              }
-              clockOut.setMinutes(clockOut.getMinutes() + Math.floor(Math.random() * 3));
-              break;
-            case 'early_leaver':
-              // On time arrival, but leaves 10-30 minutes early 40% of the time
-              clockIn.setMinutes(clockIn.getMinutes() - Math.floor(Math.random() * 3));
-              if (Math.random() < 0.4) {
-                clockOut.setMinutes(clockOut.getMinutes() - (10 + Math.floor(Math.random() * 21)));
-              }
-              break;
-            case 'inconsistent':
-              // Completely random: 50% late, 50% on time, random leave times
-              if (Math.random() < 0.5) {
-                clockIn.setMinutes(clockIn.getMinutes() + Math.floor(Math.random() * 40));
-              } else {
-                clockIn.setMinutes(clockIn.getMinutes() - Math.floor(Math.random() * 5));
-              }
-              if (Math.random() < 0.3) {
-                clockOut.setMinutes(clockOut.getMinutes() - Math.floor(Math.random() * 30));
-              } else {
-                clockOut.setMinutes(clockOut.getMinutes() + Math.floor(Math.random() * 10));
-              }
-              break;
-          }
-          
-          const msWorked = clockOut.getTime() - clockIn.getTime();
-          const hoursWorked = msWorked / (1000 * 60 * 60);
-          
-          clockEntries.push({
-            userId: employee.idUser,
-            clockIn: clockIn.toISOString(),
-            clockOut: clockOut.toISOString(),
-            hoursWorked: parseFloat(hoursWorked.toFixed(2)),
-            createdAt: clockIn.toISOString()
-          });
-        }
+        if (!planning) continue;
+
+        const planStart = new Date(planning.startTime);
+        const planEnd = new Date(planning.endTime);
+
+        const baseClockIn = new Date(currentDate);
+        baseClockIn.setHours(planStart.getUTCHours(), planStart.getUTCMinutes(), 0, 0);
+
+        const baseClockOut = new Date(currentDate);
+        baseClockOut.setHours(planEnd.getUTCHours(), planEnd.getUTCMinutes(), 0, 0);
+
+        const profileType = employeeProfiles.get(employee.idUser) || "punctual";
+        const { clockIn, clockOut } = computeClockInOutForProfile({
+          profileType,
+          baseClockIn,
+          baseClockOut,
+        });
+
+        clockEntries.push({
+          userId: employee.idUser,
+          clockIn: clockIn.toISOString(),
+          clockOut: clockOut.toISOString(),
+          hoursWorked: hoursWorkedFrom(clockIn, clockOut),
+          createdAt: clockIn.toISOString(),
+        });
       }
     }
-    
+
     currentDate.setDate(currentDate.getDate() + 1);
   }
 
   await prisma.clocks.createMany({ data: clockEntries });
   console.log(`Created ${clockEntries.length} realistic clock entries`);
-  console.log(`Employee profiles: ${Array.from(employeeProfiles.entries()).slice(0, 5).map(([id, type]) => `User ${id}: ${type}`).join(', ')}...`);
 
-  // Step 5: Create sample vacations
-  if (allEmployees.length >= 2) {
-    await prisma.vacations.create({
-      data: {
-        userId: allEmployees[0].idUser,
-        startDate: isoDate(now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate() + 7),
-        endDate: isoDate(now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate() + 10),
-        status: 'approved'
-      }
-    });
-    await prisma.vacations.create({
-      data: {
-        userId: allEmployees[1].idUser,
-        startDate: isoDate(now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate() + 14),
-        endDate: isoDate(now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate() + 18),
-        status: 'pending'
-      }
-    });
-  }
-  console.log('Created sample vacations');
+  const preview = buildProfilesPreview(employeeProfiles, 5);
+  console.log(`Employee profiles: ${preview}`);
 
-  console.log('✅ Seeding complete!');
+  return clockEntries;
 }
 
-main()
-  .catch(e => { console.error(e); process.exit(1); })
-  .finally(async () => { await prisma.$disconnect(); });
+async function createSampleVacations(allEmployees, now) {
+  if (allEmployees.length < 2) return;
+
+  await prisma.vacations.create({
+    data: {
+      userId: allEmployees[0].idUser,
+      startDate: isoDate(now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate() + 7),
+      endDate: isoDate(now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate() + 10),
+      status: "approved",
+    },
+  });
+
+  await prisma.vacations.create({
+    data: {
+      userId: allEmployees[1].idUser,
+      startDate: isoDate(now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate() + 14),
+      endDate: isoDate(now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate() + 18),
+      status: "pending",
+    },
+  });
+
+  console.log("Created sample vacations");
+}
+
+async function main() {
+  const now = new Date();
+
+  await wipeData();
+
+  const hashedPassword = await bcrypt.hash("Password1!", 10);
+  const admin = await createAdmin(hashedPassword);
+
+  const teamsData = await createTeamsAndUsers(hashedPassword);
+
+  const allUsers = [admin, ...teamsData.flatMap((t) => [t.manager, ...t.employees])];
+  const allEmployees = teamsData.flatMap((t) => [t.manager, ...t.employees]);
+
+  const allPlannings = await createTemplatePlannings(allUsers);
+
+  const employeeProfiles = buildEmployeeProfiles(allEmployees);
+
+  await generateClockEntries({ allEmployees, allPlannings, employeeProfiles });
+
+  await createSampleVacations(allEmployees, now);
+
+  console.log("✅ Seeding complete!");
+}
+
+// Sonar: prefer top-level await instead of promise chain
+try {
+  await main();
+} catch (e) {
+  console.error(e);
+  process.exitCode = 1;
+} finally {
+  await prisma.$disconnect();
+}

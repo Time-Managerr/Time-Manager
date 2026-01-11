@@ -3,9 +3,13 @@ import TeamsValidator from "../validators/TeamsValidator.js";
 
 const prisma = new PrismaClient();
 
+function toInt(value) {
+  return Number.parseInt(value, 10);
+}
+
 // Helper: check if requester manages the team
 async function isManagerOfTeam(teamId, userId) {
-  const team = await prisma.teams.findUnique({ where: { idTeam: parseInt(teamId) } });
+  const team = await prisma.teams.findUnique({ where: { idTeam: toInt(teamId) } });
   return team && team.managerId === userId;
 }
 
@@ -21,7 +25,9 @@ export default {
 
       // If manager, ensure they are creating a team for themselves
       if (requesterProfile === "manager" && validatedData.managerId !== requesterId) {
-        return res.status(403).json({ error: "Un manager ne peut créer qu'une équipe dont il est responsable." });
+        return res
+          .status(403)
+          .json({ error: "Un manager ne peut créer qu'une équipe dont il est responsable." });
       }
 
       // Vérifier si le nom existe déjà
@@ -42,23 +48,29 @@ export default {
           TeamUser: {
             create: validatedData.members?.map((userId) => ({
               Users: {
-                connect: { idUser: userId }
-              }
-            }))
-          }
+                connect: { idUser: userId },
+              },
+            })),
+          },
         },
         include: {
           Users: true, // Inclut les infos du manager
           TeamUser: {
-            include: { Users: true } // Inclut les infos des membres
-          }
-        }
+            include: { Users: true }, // Inclut les infos des membres
+          },
+        },
       });
 
-      res.status(201).json(newTeam);
+      return res.status(201).json(newTeam);
     } catch (error) {
-      console.error(error);
-      res.status(400).json({ error: error.message });
+      // Sonar: handle exception meaningfully
+      console.error("createTeam error:", error);
+
+      if (error?.name === "ZodError") {
+        return res.status(400).json({ errors: error.errors });
+      }
+
+      return res.status(500).json({ error: "Erreur serveur lors de la création de l'équipe." });
     }
   },
 
@@ -70,7 +82,7 @@ export default {
 
       if (requesterProfile === "admin") {
         const teams = await prisma.teams.findMany({
-          include: { Users: true, _count: { select: { TeamUser: true } } }
+          include: { Users: true, _count: { select: { TeamUser: true } } },
         });
         return res.status(200).json(teams);
       }
@@ -78,12 +90,9 @@ export default {
       if (requesterProfile === "manager") {
         const teams = await prisma.teams.findMany({
           where: {
-            OR: [
-              { managerId: requesterId },
-              { TeamUser: { some: { userId: requesterId } } }
-            ]
+            OR: [{ managerId: requesterId }, { TeamUser: { some: { userId: requesterId } } }],
           },
-          include: { Users: true, _count: { select: { TeamUser: true } } }
+          include: { Users: true, _count: { select: { TeamUser: true } } },
         });
         return res.status(200).json(teams);
       }
@@ -91,11 +100,12 @@ export default {
       // Employee: only teams where they are member
       const teams = await prisma.teams.findMany({
         where: { TeamUser: { some: { userId: requesterId } } },
-        include: { Users: true, _count: { select: { TeamUser: true } } }
+        include: { Users: true, _count: { select: { TeamUser: true } } },
       });
       return res.status(200).json(teams);
     } catch (error) {
-      res.status(500).json({ error: "Erreur lors de la récupération des équipes." });
+      console.error("getAllTeams error:", error);
+      return res.status(500).json({ error: "Erreur lors de la récupération des équipes." });
     }
   },
 
@@ -103,18 +113,26 @@ export default {
   async getTeamById(req, res) {
     try {
       const { id } = req.params;
+
       const team = await prisma.teams.findUnique({
-        where: { idTeam: parseInt(id) },
-        include: { 
+        where: { idTeam: toInt(id) },
+        include: {
           Users: true, // Manager
           TeamUser: {
             include: {
               Users: {
-                select: { idUser: true, firstname: true, lastname: true, email: true, phone: true, profile: true }
-              }
-            }
-          }
-        }
+                select: {
+                  idUser: true,
+                  firstname: true,
+                  lastname: true,
+                  email: true,
+                  phone: true,
+                  profile: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       if (!team) return res.status(404).json({ error: "Équipe introuvable." });
@@ -127,16 +145,19 @@ export default {
 
       // Manager can see teams they manage or member of
       if (requesterProfile === "manager") {
-        if (team.managerId === requesterId || team.TeamUser.some(tu => tu.userId === requesterId)) return res.json(team);
+        if (team.managerId === requesterId || team.TeamUser.some((tu) => tu.userId === requesterId)) {
+          return res.json(team);
+        }
         return res.status(403).json({ error: "Accès refusé." });
       }
 
       // Employee: only if member
-      if (team.TeamUser.some(tu => tu.userId === requesterId)) return res.json(team);
+      if (team.TeamUser.some((tu) => tu.userId === requesterId)) return res.json(team);
 
       return res.status(403).json({ error: "Accès refusé." });
     } catch (error) {
-      res.status(500).json({ error: "Erreur serveur." });
+      console.error("getTeamById error:", error);
+      return res.status(500).json({ error: "Erreur serveur." });
     }
   },
 
@@ -144,7 +165,7 @@ export default {
   async getTeamByUserId(req, res) {
     try {
       const { userId } = req.params;
-      const userIdInt = parseInt(userId);
+      const userIdInt = toInt(userId);
 
       // Récupérer les équipes où l'utilisateur est manager
       const teamsAsManager = await prisma.teams.findMany({
@@ -154,42 +175,58 @@ export default {
           TeamUser: {
             include: {
               Users: {
-                select: { idUser: true, firstname: true, lastname: true, email: true, phone: true, profile: true }
-              }
-            }
-          }
-        }
+                select: {
+                  idUser: true,
+                  firstname: true,
+                  lastname: true,
+                  email: true,
+                  phone: true,
+                  profile: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       // Récupérer les équipes où l'utilisateur est membre
       const teamsAsMember = await prisma.teams.findMany({
         where: {
           TeamUser: {
-            some: { userId: userIdInt }
-          }
+            some: { userId: userIdInt },
+          },
         },
         include: {
           Users: true, // Manager
           TeamUser: {
             include: {
               Users: {
-                select: { idUser: true, firstname: true, lastname: true, email: true, phone: true, profile: true }
-              }
-            }
-          }
-        }
+                select: {
+                  idUser: true,
+                  firstname: true,
+                  lastname: true,
+                  email: true,
+                  phone: true,
+                  profile: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       // Fusionner et supprimer les doublons (si manager et membre de la même équipe)
       const allTeams = [...teamsAsManager, ...teamsAsMember];
-      const uniqueTeams = allTeams.filter((team, index, self) =>
-        index === self.findIndex(t => t.idTeam === team.idTeam)
+      const uniqueTeams = allTeams.filter(
+        (team, index, self) => index === self.findIndex((t) => t.idTeam === team.idTeam)
       );
 
-      res.json(uniqueTeams);
+      return res.json(uniqueTeams);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Erreur lors de la récupération des équipes de l'utilisateur." });
+      console.error("getTeamByUserId error:", error);
+      return res
+        .status(500)
+        .json({ error: "Erreur lors de la récupération des équipes de l'utilisateur." });
     }
   },
 
@@ -203,12 +240,12 @@ export default {
       const requesterProfile = req.user?.profile;
 
       // Only admin or team manager can update
-      const allowed = (requesterProfile === "admin") || (await isManagerOfTeam(id, requesterId));
+      const allowed = requesterProfile === "admin" || (await isManagerOfTeam(id, requesterId));
       if (!allowed) return res.status(403).json({ error: "Accès refusé." });
 
       // Préparation des données de mise à jour
       const updatePayload = { ...otherData };
-      if (otherData.managerId) updatePayload.managerId = parseInt(otherData.managerId);
+      if (otherData.managerId) updatePayload.managerId = toInt(otherData.managerId);
 
       // Si on envoie une nouvelle liste de membres, on synchronise
       if (members && Array.isArray(members)) {
@@ -217,21 +254,21 @@ export default {
           deleteMany: {},
           // 2. On ajoute les nouveaux
           create: members.map((userId) => ({
-            Users: { connect: { idUser: parseInt(userId) } }
-          }))
+            Users: { connect: { idUser: toInt(userId) } },
+          })),
         };
       }
 
       const updatedTeam = await prisma.teams.update({
-        where: { idTeam: parseInt(id) },
+        where: { idTeam: toInt(id) },
         data: updatePayload,
-        include: { TeamUser: true }
+        include: { TeamUser: true },
       });
 
-      res.json(updatedTeam);
+      return res.json(updatedTeam);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Erreur lors de la mise à jour." });
+      console.error("updateTeam error:", error);
+      return res.status(500).json({ error: "Erreur lors de la mise à jour." });
     }
   },
 
@@ -244,22 +281,23 @@ export default {
       const requesterProfile = req.user?.profile;
 
       // Only admin or team manager can delete
-      const allowed = (requesterProfile === "admin") || (await isManagerOfTeam(id, requesterId));
+      const allowed = requesterProfile === "admin" || (await isManagerOfTeam(id, requesterId));
       if (!allowed) return res.status(403).json({ error: "Accès refusé." });
 
       // Note: Si vous n'avez pas de Cascade Delete configuré au niveau DB,
       // il faut d'abord supprimer les entrées dans TeamUser.
       await prisma.teamUser.deleteMany({
-        where: { teamId: parseInt(id) }
+        where: { teamId: toInt(id) },
       });
 
-      await prisma.teams.delete({ 
-        where: { idTeam: parseInt(id) } 
+      await prisma.teams.delete({
+        where: { idTeam: toInt(id) },
       });
 
-      res.json({ message: "Équipe et ses affiliations supprimées." });
+      return res.json({ message: "Équipe et ses affiliations supprimées." });
     } catch (error) {
-      res.status(500).json({ error: "Erreur lors de la suppression." });
+      console.error("deleteTeam error:", error);
+      return res.status(500).json({ error: "Erreur lors de la suppression." });
     }
   },
 };

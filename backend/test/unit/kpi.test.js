@@ -3,8 +3,6 @@ import { app } from "../../app.js";
 
 describe("KPI Management - Backend Tests", () => {
   let adminToken;
-  let managerToken;
-  let employeeToken;
 
   // Use existing test users from the database (if they exist)
   // Based on the login tests, these users exist
@@ -26,12 +24,10 @@ describe("KPI Management - Backend Tests", () => {
   // ============ AUTHENTICATION TESTS ============
   describe("POST /kpis/compute - Ad Hoc KPI Computation", () => {
     it("should reject compute request without authentication", async () => {
-      const response = await request(app)
-        .post("/kpis/compute")
-        .send({
-          scope: "user",
-          targetUserId: 1,
-        });
+      const response = await request(app).post("/kpis/compute").send({
+        scope: "user",
+        targetUserId: 1,
+      });
 
       expect(response.statusCode).toBe(401);
       expect(response.body).toHaveProperty("error");
@@ -229,14 +225,12 @@ describe("KPI Management - Backend Tests", () => {
   // ============ CREATE KPI TESTS ============
   describe("POST /kpis - Create KPI", () => {
     it("should reject KPI creation without authentication", async () => {
-      const response = await request(app)
-        .post("/kpis")
-        .send({
-          name: "Test KPI",
-          metric: "lateness",
-          scope: "user",
-          targetUserId: 1,
-        });
+      const response = await request(app).post("/kpis").send({
+        name: "Test KPI",
+        metric: "lateness",
+        scope: "user",
+        targetUserId: 1,
+      });
 
       expect(response.statusCode).toBe(401);
     });
@@ -415,12 +409,10 @@ describe("KPI Management - Backend Tests", () => {
     });
 
     it("should return proper JSON error responses", async () => {
-      const response = await request(app)
-        .post("/kpis/compute")
-        .send({
-          scope: "user",
-          targetUserId: 1,
-        });
+      const response = await request(app).post("/kpis/compute").send({
+        scope: "user",
+        targetUserId: 1,
+      });
 
       expect(response.statusCode).toBe(401);
       expect(response.body).toHaveProperty("error");
@@ -455,9 +447,7 @@ describe("KPI Management - Backend Tests", () => {
 
         expect(listResponse.statusCode).toBe(200);
         expect(Array.isArray(listResponse.body)).toBe(true);
-        const foundKpi = listResponse.body.find(
-          (k) => k.name === "Integration Test KPI"
-        );
+        const foundKpi = listResponse.body.find((k) => k.name === "Integration Test KPI");
         expect(foundKpi).toBeDefined();
       }
     });
@@ -468,28 +458,24 @@ describe("KPI Management - Backend Tests", () => {
         return;
       }
 
+      const payload = {
+        scope: "user",
+        targetUserId: 1,
+        start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        end: new Date().toISOString(),
+      };
+
       const response1 = await request(app)
         .post("/kpis/compute")
         .set("Authorization", `Bearer ${adminToken}`)
-        .send({
-          scope: "user",
-          targetUserId: 1,
-          start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-          end: new Date().toISOString(),
-        });
+        .send(payload);
 
       const response2 = await request(app)
         .post("/kpis/compute")
         .set("Authorization", `Bearer ${adminToken}`)
-        .send({
-          scope: "user",
-          targetUserId: 1,
-          start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-          end: new Date().toISOString(),
-        });
+        .send(payload);
 
       if (response1.statusCode === 200 && response2.statusCode === 200) {
-        // Both should have same structure
         expect(response1.body).toHaveProperty("user");
         expect(response2.body).toHaveProperty("user");
         expect(response1.body).toHaveProperty("lateness");
@@ -498,4 +484,3 @@ describe("KPI Management - Backend Tests", () => {
     });
   });
 });
-

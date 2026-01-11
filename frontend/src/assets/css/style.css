@@ -26,7 +26,6 @@ p {
   box-sizing: border-box;
 }
 
-
 body {
   min-width: 320px;
   background-color: #242424;
@@ -93,8 +92,9 @@ button:focus-visible {
   background-color: #78a1bb !important;
 }
 
+/* FIX CONTRASTE: était #78a1bb (trop clair sur fond blanc) */
 .text-blue-sky {
-  color: #78a1bb !important;
+  color: #1F2D5C !important;
 }
 
 /* BUTTON COLOR CUSTOMIZATION - Consistent branding */
@@ -134,38 +134,40 @@ button:focus-visible {
 }
 
 /* Softer red for danger buttons */
+/* FIX CONTRASTE: rouge plus foncé pour texte blanc */
 .btn-danger {
-  background-color: #e8847b !important;
-  border-color: #e8847b !important;
+  background-color: #B84035 !important;
+  border-color: #B84035 !important;
   color: white !important;
 }
 
 .btn-danger:hover {
-  background-color: #d96d62 !important;
-  border-color: #d96d62 !important;
+  background-color: #A5382E !important;
+  border-color: #A5382E !important;
 }
 
 .btn-danger:active,
 .btn-danger:focus {
-  background-color: #c9564a !important;
-  border-color: #c9564a !important;
+  background-color: #8F3027 !important;
+  border-color: #8F3027 !important;
 }
 
+/* FIX CONTRASTE: outline danger plus foncé (texte sur fond blanc) */
 .btn-outline-danger {
-  color: #e8847b !important;
-  border-color: #e8847b !important;
+  color: #B84035 !important;
+  border-color: #B84035 !important;
 }
 
 .btn-outline-danger:hover {
-  background-color: #e8847b !important;
-  border-color: #e8847b !important;
+  background-color: #B84035 !important;
+  border-color: #B84035 !important;
   color: white !important;
 }
 
 .btn-outline-danger:active,
 .btn-outline-danger:focus {
-  background-color: #d96d62 !important;
-  border-color: #d96d62 !important;
+  background-color: #A5382E !important;
+  border-color: #A5382E !important;
   color: white !important;
 }
 
@@ -187,16 +189,17 @@ button:focus-visible {
   border-color: #b8b8b8 !important;
 }
 
+/* FIX CONTRASTE: teal plus foncé pour le texte sur fond blanc */
 .btn-outline-secondary {
-  color: #1b93b1 !important;
-  border-color: #e8e8e8 !important;
+  color: #0f5a73 !important;
+  border-color: #0f5a73 !important;
   background-color: white !important;
 }
 
 .btn-outline-secondary:hover {
   background-color: #f5f5f5 !important;
-  border-color: #1b93b1 !important;
-  color: #1b93b1 !important;
+  border-color: #0f5a73 !important;
+  color: #0f5a73 !important;
 }
 
 /* Light buttons - for close/dismiss */
@@ -228,7 +231,6 @@ button:focus-visible {
   background-color: #0f5a73 !important;
   border-color: #0f5a73 !important;
 }
-
 
 @media (prefers-color-scheme: light) {
   :root {

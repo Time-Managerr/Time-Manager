@@ -6,38 +6,43 @@
     <div class="card p-3 mb-4">
       <div class="row">
         <div class="col-md-2">
-          <label class="form-label fw-bold">Scope</label>
-          <select class="form-select" v-model="scope">
+          <label class="form-label fw-bold" for="kpi-scope">Scope</label>
+          <select id="kpi-scope" class="form-select" v-model="scope">
             <option value="user">User</option>
             <option value="team">Team</option>
           </select>
         </div>
+
         <div class="col-md-3" v-if="scope === 'user'">
-          <label class="form-label fw-bold">Select User</label>
-          <select class="form-select" v-model.number="targetId">
+          <label class="form-label fw-bold" for="kpi-target-user">Select User</label>
+          <select id="kpi-target-user" class="form-select" v-model.number="targetId">
             <option :value="null" disabled>-- Choose a user --</option>
             <option v-for="u in availableUsers" :key="u.idUser" :value="u.idUser">
               {{ u.firstname }} {{ u.lastname }}
             </option>
           </select>
         </div>
+
         <div class="col-md-3" v-if="scope === 'team'">
-          <label class="form-label fw-bold">Select Team</label>
-          <select class="form-select" v-model.number="targetId">
+          <label class="form-label fw-bold" for="kpi-target-team">Select Team</label>
+          <select id="kpi-target-team" class="form-select" v-model.number="targetId">
             <option :value="null" disabled>-- Choose a team --</option>
             <option v-for="t in availableTeams" :key="t.idTeam" :value="t.idTeam">
               {{ t.name }}
             </option>
           </select>
         </div>
+
         <div class="col-md-2">
-          <label class="form-label fw-bold">Start Date</label>
-          <input type="date" class="form-control" v-model="startDate" />
+          <label class="form-label fw-bold" for="kpi-start-date">Start Date</label>
+          <input id="kpi-start-date" type="date" class="form-control" v-model="startDate" />
         </div>
+
         <div class="col-md-2">
-          <label class="form-label fw-bold">End Date</label>
-          <input type="date" class="form-control" v-model="endDate" />
+          <label class="form-label fw-bold" for="kpi-end-date">End Date</label>
+          <input id="kpi-end-date" type="date" class="form-control" v-model="endDate" />
         </div>
+
         <div class="col-md-2 d-flex align-items-end gap-2">
           <button class="btn btn-primary flex-grow-1" @click="loadData">Load</button>
           <button class="btn btn-outline-secondary" @click="exportPdf" v-if="kpiData || teamResults">PDF</button>
@@ -53,14 +58,15 @@
           <div class="card p-4">
             <h5 class="text-secondary mb-3">Attendance</h5>
             <p class="lead">
-              Employee <strong>{{ kpiData.user.firstname }} {{ kpiData.user.lastname }}</strong> 
-              has been on time <strong>{{ kpiData.lateness.onTimeDays }}</strong> days 
+              Employee <strong>{{ kpiData.user.firstname }} {{ kpiData.user.lastname }}</strong>
+              has been on time <strong>{{ kpiData.lateness.onTimeDays }}</strong> days
               on the <strong>{{ kpiData.lateness.totalDays }}</strong> days selected
             </p>
             <div class="text-center my-3">
-              <div 
-                :class="getLatenessColor(kpiData.lateness)" 
-                style="display: inline-block; padding: 20px 40px; border-radius: 10px;">
+              <div
+                :class="getLatenessColor(kpiData.lateness)"
+                style="display: inline-block; padding: 20px 40px; border-radius: 10px;"
+              >
                 <div style="font-size: 3rem; font-weight: bold;">
                   {{ getLatenessPercentage(kpiData.lateness) }}%
                 </div>
@@ -76,13 +82,14 @@
           <div class="card p-4">
             <h5 class="text-secondary mb-3">Hours Worked</h5>
             <p class="lead">
-              Total hours worked: <strong>{{ decimalToHHMM(kpiData.hours.total) }}</strong> 
+              Total hours worked: <strong>{{ decimalToHHMM(kpiData.hours.total) }}</strong>
               over {{ kpiData.hours.totalDays }} days
             </p>
             <div class="text-center my-3">
-              <div 
-                :class="getHoursColor(kpiData.hours)" 
-                style="display: inline-block; padding: 20px 40px; border-radius: 10px;">
+              <div
+                :class="getHoursColor(kpiData.hours)"
+                style="display: inline-block; padding: 20px 40px; border-radius: 10px;"
+              >
                 <div style="font-size: 3rem; font-weight: bold;">
                   {{ decimalToHHMM(getAvgHours(kpiData.hours)) }}
                 </div>
@@ -149,17 +156,19 @@
               <td><strong>{{ r.user.firstname }} {{ r.user.lastname }}</strong></td>
               <td>{{ r.lateness.onTimeDays }} / {{ r.lateness.totalDays }}</td>
               <td>
-                <span 
+                <span
                   :class="'badge ' + getLatenessBadgeColor(r.lateness)"
-                  style="font-size: 1rem; padding: 8px 12px;">
+                  style="font-size: 1rem; padding: 8px 12px;"
+                >
                   {{ getLatenessPercentage(r.lateness) }}%
                 </span>
               </td>
               <td>{{ decimalToHHMM(r.hours.total) }}</td>
               <td>
-                <span 
+                <span
                   :class="'badge ' + getHoursBadgeColor(r.hours)"
-                  style="font-size: 1rem; padding: 8px 12px;">
+                  style="font-size: 1rem; padding: 8px 12px;"
+                >
                   {{ decimalToHHMM(getAvgHours(r.hours)) }}
                 </span>
               </td>
@@ -172,7 +181,7 @@
 </template>
 
 <script>
-import { ref, onMounted, nextTick, watch } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { Chart, registerables } from 'chart.js';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -184,7 +193,6 @@ import planningService from '../services/planningService';
 import { useToast } from '../composables/useToast';
 
 const toast = useToast();
-
 Chart.register(...registerables);
 
 export default {
@@ -200,6 +208,7 @@ export default {
     const clockHistory = ref([]);
     const latenessChart = ref(null);
     const hoursChart = ref(null);
+
     let latenessChartInstance = null;
     let hoursChartInstance = null;
 
@@ -207,17 +216,13 @@ export default {
       try {
         const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
-        // Always populate teams (filtered by backend based on role)
         const teamsRes = await teamsService.getAllTeams();
         availableTeams.value = teamsRes;
 
-        // Populate users based on role for reliable dropdown
         if (currentUser && currentUser.profile === 'manager') {
-          // Get teams where the manager is manager or member, including detailed members
           const mgrTeams = await teamsService.getTeamsByUserId(currentUser.id);
           const uniqueUsers = new Map();
 
-          // Include the manager themselves
           if (currentUser.id) {
             uniqueUsers.set(currentUser.id, {
               idUser: currentUser.id,
@@ -226,7 +231,6 @@ export default {
             });
           }
 
-          // Include all team members
           for (const t of mgrTeams) {
             for (const m of (t.members || [])) {
               uniqueUsers.set(m.id, {
@@ -238,7 +242,6 @@ export default {
           }
           availableUsers.value = Array.from(uniqueUsers.values());
         } else {
-          // Admin or fallback: load all users
           const usersRes = await usersService.getAll();
           availableUsers.value = usersRes;
         }
@@ -255,14 +258,14 @@ export default {
     };
 
     const getLatenessColor = (lateness) => {
-      const pct = parseFloat(getLatenessPercentage(lateness));
+      const pct = Number.parseFloat(getLatenessPercentage(lateness));
       if (pct < 5) return 'bg-success text-white';
       if (pct < 15) return 'bg-warning text-dark';
       return 'bg-danger text-white';
     };
 
     const getLatenessBadgeColor = (lateness) => {
-      const pct = parseFloat(getLatenessPercentage(lateness));
+      const pct = Number.parseFloat(getLatenessPercentage(lateness));
       if (pct < 5) return 'bg-success';
       if (pct < 15) return 'bg-warning';
       return 'bg-danger';
@@ -274,115 +277,94 @@ export default {
     };
 
     const getHoursColor = (hours) => {
-      const avg = parseFloat(getAvgHours(hours));
+      const avg = Number.parseFloat(String(getAvgHours(hours)));
       return avg >= 8 ? 'bg-success text-white' : 'bg-danger text-white';
     };
 
     const getHoursBadgeColor = (hours) => {
-      const avg = parseFloat(getAvgHours(hours));
+      const avg = Number.parseFloat(String(getAvgHours(hours)));
       return avg >= 8 ? 'bg-success' : 'bg-danger';
     };
 
     const formatTime = (iso) => {
       if (!iso) return '-';
-      try {
-        const d = new Date(iso);
-        const hours = String(d.getUTCHours()).padStart(2, '0');
-        const minutes = String(d.getUTCMinutes()).padStart(2, '0');
-        return `${hours}:${minutes}`;
-      } catch (e) { return '-'; }
+      const d = new Date(iso);
+      const hours = String(d.getUTCHours()).padStart(2, '0');
+      const minutes = String(d.getUTCMinutes()).padStart(2, '0');
+      return `${hours}:${minutes}`;
     };
 
     const decimalToHHMM = (hours) => {
-      if (!hours && hours !== 0) return '-';
-      const h = Math.floor(hours);
-      const m = Math.round((hours - h) * 60);
+      if (hours === null || hours === undefined) return '-';
+      const numeric = typeof hours === 'number' ? hours : Number.parseFloat(String(hours));
+      if (Number.isNaN(numeric)) return '-';
+
+      const h = Math.floor(numeric);
+      const m = Math.round((numeric - h) * 60);
       return `${h}:${m.toString().padStart(2, '0')}`;
-    };
-
-    const isClockInLate = (clock) => {
-      if (!clock || !clock.clockIn) return false;
-      try {
-        const clockInTime = new Date(clock.clockIn);
-        const clockHour = clockInTime.getUTCHours();
-        const clockMin = clockInTime.getUTCMinutes();
-        
-        // If there's a planning, compare with planned start time + 5min grace period
-        if (clock.planning && clock.planning.startTime) {
-          const plannedStart = new Date(clock.planning.startTime);
-          let plannedHour = plannedStart.getUTCHours();
-          let plannedMin = plannedStart.getUTCMinutes();
-          
-          // Add 5min grace period
-          plannedMin += 5;
-          if (plannedMin >= 60) {
-            plannedHour += 1;
-            plannedMin -= 60;
-          }
-          
-          // Compare time only (HH:MM format as total minutes)
-          const clockTotalMin = clockHour * 60 + clockMin;
-          const plannedTotalMin = plannedHour * 60 + plannedMin;
-          return clockTotalMin > plannedTotalMin;
-        }
-        
-        // Fallback to default 9:05 (9:00 + 5min) if no planning
-        const defaultTotalMin = 9 * 60 + 5;
-        const clockTotalMin = clockHour * 60 + clockMin;
-        return clockTotalMin > defaultTotalMin;
-      } catch (e) { 
-        return false; 
-      }
-    };
-
-    const isClockOutEarly = (clock) => {
-      if (!clock || !clock.clockOut) return false;
-      try {
-        const clockOutTime = new Date(clock.clockOut);
-        
-        // If there's a planning, compare with planned end time
-        if (clock.planning && clock.planning.endTime) {
-          const plannedEnd = new Date(clock.planning.endTime);
-          return clockOutTime < plannedEnd;
-        }
-        
-        // Fallback to default 17:00 if no planning
-        return clockOutTime.getUTCHours() < 17 || (clockOutTime.getUTCHours() === 17 && clockOutTime.getUTCMinutes() < 0);
-      } catch (e) { 
-        return false; 
-      }
-    };
-
-    const getClockInStyle = (clock) => {
-      return isClockInLate(clock) ? 'color: #dc3545; font-weight: bold;' : '';
-    };
-
-    const getClockOutStyle = (clock) => {
-      return isClockOutEarly(clock) ? 'color: #dc3545; font-weight: bold;' : '';
     };
 
     const formatDate = (iso) => {
       if (!iso) return '-';
-      try {
-        return new Date(iso).toLocaleDateString();
-      } catch (e) { return '-'; }
+      return new Date(iso).toLocaleDateString();
     };
 
+    const isClockInLate = (clock) => {
+      if (!clock?.clockIn) return false;
+
+      const clockInTime = new Date(clock.clockIn);
+      const clockHour = clockInTime.getUTCHours();
+      const clockMin = clockInTime.getUTCMinutes();
+
+      if (clock.planning?.startTime) {
+        const plannedStart = new Date(clock.planning.startTime);
+        let plannedHour = plannedStart.getUTCHours();
+        let plannedMin = plannedStart.getUTCMinutes();
+
+        plannedMin += 5;
+        if (plannedMin >= 60) {
+          plannedHour += 1;
+          plannedMin -= 60;
+        }
+
+        const clockTotalMin = clockHour * 60 + clockMin;
+        const plannedTotalMin = plannedHour * 60 + plannedMin;
+        return clockTotalMin > plannedTotalMin;
+      }
+
+      const defaultTotalMin = 9 * 60 + 5;
+      const clockTotalMin = clockHour * 60 + clockMin;
+      return clockTotalMin > defaultTotalMin;
+    };
+
+    const isClockOutEarly = (clock) => {
+      if (!clock?.clockOut) return false;
+
+      const clockOutTime = new Date(clock.clockOut);
+
+      if (clock.planning?.endTime) {
+        const plannedEnd = new Date(clock.planning.endTime);
+        return clockOutTime < plannedEnd;
+      }
+
+      const h = clockOutTime.getUTCHours();
+      const m = clockOutTime.getUTCMinutes();
+      return h < 17 || (h === 17 && m < 0);
+    };
+
+    const getClockInStyle = (clock) => (isClockInLate(clock) ? 'color: #dc3545; font-weight: bold;' : '');
+    const getClockOutStyle = (clock) => (isClockOutEarly(clock) ? 'color: #dc3545; font-weight: bold;' : '');
+
     const getClockStatus = (clock) => {
-      // Safely convert to number
-      const hours = clock.hoursWorked ? parseFloat(clock.hoursWorked) : null;
-      
-      if (hours === null || hours === undefined || isNaN(hours)) {
-        return 'No data';
-      }
-      
-      if (hours < 8) {
-        return 'Short';
-      } else if (hours > 8.5) {
-        return 'Overtime';
-      } else {
-        return 'Normal';
-      }
+      const raw = clock?.hoursWorked;
+      if (raw === null || raw === undefined) return 'No data';
+
+      const hours = typeof raw === 'number' ? raw : Number.parseFloat(String(raw));
+      if (Number.isNaN(hours)) return 'No data';
+
+      if (hours < 8) return 'Short';
+      if (hours > 8.5) return 'Overtime';
+      return 'Normal';
     };
 
     const getClockBadge = (clock) => {
@@ -394,38 +376,29 @@ export default {
 
     const createCharts = async () => {
       await nextTick();
-      
+
       if (latenessChartInstance) latenessChartInstance.destroy();
       if (hoursChartInstance) hoursChartInstance.destroy();
 
       if (kpiData.value && latenessChart.value) {
         const lateCount = kpiData.value.lateness.lateCount;
         const onTimeCount = kpiData.value.lateness.onTimeDays;
-        
+
         latenessChartInstance = new Chart(latenessChart.value, {
           type: 'pie',
           data: {
             labels: ['On Time', 'Late'],
-            datasets: [{
-              data: [onTimeCount, lateCount],
-              backgroundColor: ['#198754', '#dc3545']
-            }]
+            datasets: [{ data: [onTimeCount, lateCount], backgroundColor: ['#198754', '#dc3545'] }]
           },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { position: 'bottom' }
-            }
-          }
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
         });
       }
 
       if (kpiData.value && hoursChart.value) {
-        const avgHours = parseFloat(getAvgHours(kpiData.value.hours));
+        const avgHours = Number.parseFloat(String(getAvgHours(kpiData.value.hours)));
         const targetHours = 8;
-        const convertToHHMM = decimalToHHMM; // Capture in closure
-        
+        const convertToHHMM = decimalToHHMM;
+
         hoursChartInstance = new Chart(hoursChart.value, {
           type: 'bar',
           data: {
@@ -439,98 +412,110 @@ export default {
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: {
-              y: {
-                beginAtZero: false,
-                min: 6,
-                max: 9,
-                ticks: { stepSize: 0.5 }
-              }
-            },
+            scales: { y: { beginAtZero: false, min: 6, max: 9, ticks: { stepSize: 0.5 } } },
             plugins: {
               legend: { display: false },
-              tooltip: {
-                callbacks: {
-                  label: function(context) {
-                    return convertToHHMM(context.parsed.y);
-                  }
-                }
-              }
+              tooltip: { callbacks: { label: (context) => convertToHHMM(context.parsed.y) } }
             }
           }
         });
       }
     };
 
-    const loadData = async () => {
-      try {
-        if (!targetId.value) { 
-          toast.warning('Please select a ' + (scope.value === 'user' ? 'user' : 'team')); 
-          return; 
+    const validateSelectionOrToast = () => {
+      if (targetId.value) return true;
+      toast.warning('Please select a ' + (scope.value === 'user' ? 'user' : 'team'));
+      return false;
+    };
+
+    const resetResults = () => {
+      kpiData.value = null;
+      teamResults.value = null;
+      clockHistory.value = [];
+    };
+
+    const buildPayload = () => ({
+      scope: scope.value,
+      start: startDate.value,
+      end: endDate.value
+    });
+
+    const buildPlanningsMaps = (plannings) => {
+      const planningsByDate = {};
+      const planningsByDayOfWeek = {};
+
+      plannings.forEach((p) => {
+        if (p?.isTemplate && p.dayOfWeek !== null && p.dayOfWeek !== undefined) {
+          planningsByDayOfWeek[p.dayOfWeek] = p;
+          return;
         }
+        if (p?.date) {
+          const dateKey = new Date(p.date).toDateString();
+          planningsByDate[dateKey] = p;
+        }
+      });
 
-        kpiData.value = null;
-        teamResults.value = null;
-        clockHistory.value = [];
+      return { planningsByDate, planningsByDayOfWeek };
+    };
 
-        const payload = {
-          scope: scope.value,
-          start: startDate.value,
-          end: endDate.value
-        };
-        
+    const attachPlanningToClocks = (clocks, planningsByDate, planningsByDayOfWeek, rangeStart, rangeEnd) => {
+      return clocks
+        .filter((c) => {
+          const d = new Date(c.clockIn);
+          return d >= rangeStart && d <= rangeEnd;
+        })
+        .map((c) => {
+          const d = new Date(c.clockIn);
+          const dateKey = d.toDateString();
+          const dayOfWeek = (d.getDay() + 6) % 7;
+
+          const planning = planningsByDate[dateKey] || planningsByDayOfWeek[dayOfWeek];
+          return { ...c, planning };
+        })
+        .sort((a, b) => new Date(b.clockIn) - new Date(a.clockIn));
+    };
+
+    const loadUserData = async (payload) => {
+      payload.targetUserId = Number(targetId.value);
+
+      const res = await kpiService.compute(payload);
+      kpiData.value = res.data;
+
+      const clocksRes = await clockService.getByUserId(targetId.value);
+      const rangeStart = new Date(startDate.value);
+      const rangeEnd = new Date(endDate.value);
+
+      const plannings = await planningService.getByUserId(targetId.value);
+      const { planningsByDate, planningsByDayOfWeek } = buildPlanningsMaps(plannings);
+
+      clockHistory.value = attachPlanningToClocks(
+        clocksRes,
+        planningsByDate,
+        planningsByDayOfWeek,
+        rangeStart,
+        rangeEnd
+      );
+
+      await createCharts();
+    };
+
+    const loadTeamData = async (payload) => {
+      payload.targetTeamId = Number(targetId.value);
+      const res = await kpiService.compute(payload);
+      teamResults.value = res.data.teamResults;
+    };
+
+    const loadData = async () => {
+      if (!validateSelectionOrToast()) return;
+
+      resetResults();
+
+      try {
+        const payload = buildPayload();
         if (scope.value === 'user') {
-          payload.targetUserId = Number(targetId.value);
-          
-          // Fetch KPI data
-          const res = await kpiService.compute(payload);
-          kpiData.value = res.data;
-          
-          // Fetch clock history and plannings for the period
-          const clocksRes = await clockService.getByUserId(targetId.value);
-          const start = new Date(startDate.value);
-          const end = new Date(endDate.value);
-          
-          // Fetch all plannings for the user
-          const plannings = await planningService.getByUserId(targetId.value);
-          
-          // Build maps of plannings by date and by dayOfWeek
-          const planningsByDate = {};
-          const planningsByDayOfWeek = {};
-          plannings.forEach(p => {
-            if (p.isTemplate && p.dayOfWeek !== null && p.dayOfWeek !== undefined) {
-              // Template planning - map by dayOfWeek (0=Monday, ..., 6=Sunday)
-              planningsByDayOfWeek[p.dayOfWeek] = p;
-            } else if (p.date) {
-              // Historical planning - map by date
-              const dateKey = new Date(p.date).toDateString();
-              planningsByDate[dateKey] = p;
-            }
-          });
-          
-          // Attach planning data to clocks
-          clockHistory.value = clocksRes.filter(c => {
-            const d = new Date(c.clockIn);
-            return d >= start && d <= end;
-          }).map(c => {
-            const d = new Date(c.clockIn);
-            const dateKey = d.toDateString();
-            const dayOfWeek = (d.getDay() + 6) % 7; // Convert to 0=Monday format
-            
-            // First try to find date-specific planning, then fall back to template
-            const planning = planningsByDate[dateKey] || planningsByDayOfWeek[dayOfWeek];
-            return {
-              ...c,
-              planning
-            };
-          }).sort((a, b) => new Date(b.clockIn) - new Date(a.clockIn));
-          
-          // Create charts
-          await createCharts();
+          await loadUserData(payload);
         } else {
-          payload.targetTeamId = Number(targetId.value);
-          const res = await kpiService.compute(payload);
-          teamResults.value = res.data.teamResults;
+          await loadTeamData(payload);
         }
       } catch (err) {
         console.error('Error loading data:', err);
@@ -538,14 +523,20 @@ export default {
       }
     };
 
+    const getLatenessBgColor = (lateness) => {
+      const pct = Number.parseFloat(getLatenessPercentage(lateness));
+      if (pct < 5) return '#d4edda';
+      if (pct < 15) return '#fff3cd';
+      return '#f8d7da';
+    };
+
     const exportPdf = async () => {
       try {
-        // Create a container for the content to capture
         const container = document.createElement('div');
         container.style.backgroundColor = '#fff';
         container.style.padding = '20px';
         container.style.fontFamily = 'system-ui, -apple-system, sans-serif';
-        
+
         let html = `
           <div style="margin-bottom: 20px;">
             <h1 style="font-size: 24px; margin-bottom: 10px;">Performance Metrics Report</h1>
@@ -573,7 +564,6 @@ export default {
             </div>
           `;
 
-          // Add clock history table
           if (clockHistory.value.length > 0) {
             html += `
               <div style="margin-bottom: 20px;">
@@ -590,21 +580,22 @@ export default {
                   </thead>
                   <tbody>
             `;
-            
+
             for (const c of clockHistory.value.slice(0, 30)) {
-              const isLate = isClockInLate(c) ? 'color: #dc3545; font-weight: bold;' : '';
-              const isEarly = isClockOutEarly(c) ? 'color: #dc3545; font-weight: bold;' : '';
+              const lateStyle = isClockInLate(c) ? 'color: #dc3545; font-weight: bold;' : '';
+              const earlyStyle = isClockOutEarly(c) ? 'color: #dc3545; font-weight: bold;' : '';
+
               html += `
                 <tr style="border-bottom: 1px solid #ddd;">
                   <td style="padding: 8px; border: 1px solid #ddd;">${formatDate(c.clockIn)}</td>
-                  <td style="padding: 8px; border: 1px solid #ddd; ${isLate}">${formatTime(c.clockIn)}</td>
-                  <td style="padding: 8px; border: 1px solid #ddd; ${isEarly}">${c.clockOut ? formatTime(c.clockOut) : '-'}</td>
+                  <td style="padding: 8px; border: 1px solid #ddd; ${lateStyle}">${formatTime(c.clockIn)}</td>
+                  <td style="padding: 8px; border: 1px solid #ddd; ${earlyStyle}">${c.clockOut ? formatTime(c.clockOut) : '-'}</td>
                   <td style="padding: 8px; border: 1px solid #ddd;">${c.hoursWorked ? decimalToHHMM(c.hoursWorked) : '-'}</td>
                   <td style="padding: 8px; border: 1px solid #ddd;"><span style="background-color: #e7f3ff; padding: 2px 6px; border-radius: 3px;">${getClockStatus(c)}</span></td>
                 </tr>
               `;
             }
-            
+
             html += `
                   </tbody>
                 </table>
@@ -626,18 +617,23 @@ export default {
                 </thead>
                 <tbody>
           `;
-          
+
           for (const r of teamResults.value) {
+            const bg = getLatenessBgColor(r.lateness);
             html += `
               <tr style="border-bottom: 1px solid #ddd;">
                 <td style="padding: 8px; border: 1px solid #ddd;"><strong>${r.user.firstname} ${r.user.lastname}</strong></td>
                 <td style="padding: 8px; border: 1px solid #ddd;">${r.lateness.onTimeDays} / ${r.lateness.totalDays}</td>
-                <td style="padding: 8px; border: 1px solid #ddd;"><span style="background-color: ${getLatenessPercentage(r.lateness) < 5 ? '#d4edda' : getLatenessPercentage(r.lateness) < 15 ? '#fff3cd' : '#f8d7da'}; padding: 2px 6px; border-radius: 3px;">${getLatenessPercentage(r.lateness)}%</span></td>
+                <td style="padding: 8px; border: 1px solid #ddd;">
+                  <span style="background-color: ${bg}; padding: 2px 6px; border-radius: 3px;">
+                    ${getLatenessPercentage(r.lateness)}%
+                  </span>
+                </td>
                 <td style="padding: 8px; border: 1px solid #ddd;">${decimalToHHMM(getAvgHours(r.hours))}</td>
               </tr>
             `;
           }
-          
+
           html += `
                 </tbody>
               </table>
@@ -648,25 +644,22 @@ export default {
         container.innerHTML = html;
         document.body.appendChild(container);
 
-        // Capture the styled content as an image
         const canvas = await html2canvas(container);
-        document.body.removeChild(container);
 
-        // Create PDF with the captured image
+        // FIX SONAR: prefer childNode.remove()
+        container.remove();
+
         const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'mm',
-          format: 'a4'
-        });
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-        const imgWidth = 210; // A4 width in mm
+        const imgWidth = 210;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
         let heightLeft = imgHeight;
         let position = 0;
 
         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= 297; // A4 height in mm
+        heightLeft -= 297;
 
         while (heightLeft > 0) {
           position = heightLeft - imgHeight;
@@ -722,4 +715,3 @@ export default {
   line-height: 1.6;
 }
 </style>
-

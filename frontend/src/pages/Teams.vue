@@ -77,7 +77,7 @@
               </div>
             </div>
           </div>
-          
+
           <!-- Create Team Card -->
           <div v-if="userRole === 'manager'" class="col-lg-4 col-md-6 col-sm-12">
             <div class="team-card create-team-card card border-0 shadow-sm p-4 h-100" @click="openCreateTeamPopup">
@@ -214,17 +214,44 @@
 
         <div class="planning-box">
           <div v-if="selectedMemberPlanning.planningsByDay?.length">
-            <div v-for="(dayPlan, index) in selectedMemberPlanning.planningsByDay" :key="index" class="d-flex align-items-center justify-content-between mb-2 p-3 border rounded">
+            <div
+              v-for="(dayPlan, index) in selectedMemberPlanning.planningsByDay"
+              :key="index"
+              class="d-flex align-items-center justify-content-between mb-2 p-3 border rounded"
+            >
               <div>
                 <strong>{{ dayPlan.dayName }}</strong>
                 <small class="text-muted d-block">{{ dayPlan.count }} occurrences</small>
               </div>
 
               <div class="d-flex gap-2 align-items-center">
-                <label class="small text-muted">Start</label>
-                <input type="time" v-model="dayPlan.timeStart" class="form-control form-control-sm" />
-                <label class="small text-muted">End</label>
-                <input type="time" v-model="dayPlan.timeEnd" class="form-control form-control-sm" />
+                <!-- ✅ label associé -->
+                <label
+                  class="small text-muted"
+                  :for="`planning-start-${dayPlan.idPlanning ?? index}`"
+                >
+                  Start
+                </label>
+                <input
+                  :id="`planning-start-${dayPlan.idPlanning ?? index}`"
+                  type="time"
+                  v-model="dayPlan.timeStart"
+                  class="form-control form-control-sm"
+                />
+
+                <!-- ✅ label associé -->
+                <label
+                  class="small text-muted"
+                  :for="`planning-end-${dayPlan.idPlanning ?? index}`"
+                >
+                  End
+                </label>
+                <input
+                  :id="`planning-end-${dayPlan.idPlanning ?? index}`"
+                  type="time"
+                  v-model="dayPlan.timeEnd"
+                  class="form-control form-control-sm"
+                />
               </div>
             </div>
           </div>
@@ -280,8 +307,10 @@
 
         <form @submit.prevent="submitCreateTeam">
           <div class="mb-3">
-            <label class="form-label fw-semibold">Team Name</label>
+            <!-- ✅ label associé -->
+            <label class="form-label fw-semibold" for="team-name">Team Name</label>
             <input
+              id="team-name"
               v-model="newTeamForm.name"
               type="text"
               class="form-control"
@@ -291,8 +320,10 @@
           </div>
 
           <div class="mb-3">
-            <label class="form-label fw-semibold">Description</label>
+            <!-- ✅ label associé -->
+            <label class="form-label fw-semibold" for="team-description">Description</label>
             <textarea
+              id="team-description"
               v-model="newTeamForm.description"
               class="form-control"
               rows="3"
@@ -314,6 +345,7 @@
                   type="checkbox"
                   class="form-check-input"
                 />
+                <!-- ✅ label associé (déjà ok, on garde) -->
                 <label :for="`user-${user.id}`" class="form-check-label">
                   <span class="fw-medium">{{ user.name }}</span>
                   <br />
@@ -345,28 +377,33 @@
 
         <form @submit.prevent="saveMemberChanges">
           <div class="mb-3">
-            <label class="form-label fw-semibold">First name</label>
-            <input v-model="editForm.firstname" type="text" class="form-control" required />
+            <!-- ✅ label associé -->
+            <label class="form-label fw-semibold" for="edit-firstname">First name</label>
+            <input id="edit-firstname" v-model="editForm.firstname" type="text" class="form-control" required />
           </div>
 
           <div class="mb-3">
-            <label class="form-label fw-semibold">Last name</label>
-            <input v-model="editForm.lastname" type="text" class="form-control" required />
+            <!-- ✅ label associé -->
+            <label class="form-label fw-semibold" for="edit-lastname">Last name</label>
+            <input id="edit-lastname" v-model="editForm.lastname" type="text" class="form-control" required />
           </div>
 
           <div class="mb-3">
-            <label class="form-label fw-semibold">Email</label>
-            <input v-model="editForm.email" type="email" class="form-control" required />
+            <!-- ✅ label associé -->
+            <label class="form-label fw-semibold" for="edit-email">Email</label>
+            <input id="edit-email" v-model="editForm.email" type="email" class="form-control" required />
           </div>
 
           <div class="mb-3">
-            <label class="form-label fw-semibold">Phone</label>
-            <input v-model="editForm.phone" type="text" class="form-control" />
+            <!-- ✅ label associé -->
+            <label class="form-label fw-semibold" for="edit-phone">Phone</label>
+            <input id="edit-phone" v-model="editForm.phone" type="text" class="form-control" />
           </div>
 
           <div class="mb-3">
-            <label class="form-label fw-semibold">Role</label>
-            <select v-model="editForm.profile" class="form-select">
+            <!-- ✅ label associé -->
+            <label class="form-label fw-semibold" for="edit-role">Role</label>
+            <select id="edit-role" v-model="editForm.profile" class="form-select">
               <option value="manager">Manager</option>
               <option value="employee">Employee</option>
             </select>
@@ -409,9 +446,12 @@ const fetchTeams = async () => {
   try {
     const user = JSON.parse(localStorage.getItem('user'));
     if (user && user.id) {
-      // Définir le rôle en fonction du profil (cas-insensible)
       const profile = (user.profile || '').toString().toLowerCase();
-      userRole.value = profile === 'manager' ? 'manager' : (profile === 'admin' ? 'admin' : 'employee');
+
+      // ✅ Sonar: extraction du nested ternary
+      if (profile === 'manager') userRole.value = 'manager';
+      else if (profile === 'admin') userRole.value = 'admin';
+      else userRole.value = 'employee';
 
       const data = await teamsService.getTeamsByUserId(user.id);
       teams.value = data;
@@ -486,19 +526,21 @@ const openPlanningPopup = async (member) => {
   try {
     // Fetch template plannings for this member (isTemplate=true)
     const templates = await planningService.getByUserId(member.id);
-    
+
     // Convert to UI format
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const planningsByDay = templates.map(t => ({
-      idPlanning: t.idPlanning,
-      dayOfWeek: t.dayOfWeek,
-      dayName: dayNames[t.dayOfWeek],
-      timeStart: timeFromISO(t.startTime),
-      timeEnd: timeFromISO(t.endTime)
-    })).sort((a, b) => a.dayOfWeek - b.dayOfWeek);
-    
-    selectedMemberPlanning.value = { 
-      ...member, 
+    const planningsByDay = templates
+      .map(t => ({
+        idPlanning: t.idPlanning,
+        dayOfWeek: t.dayOfWeek,
+        dayName: dayNames[t.dayOfWeek],
+        timeStart: timeFromISO(t.startTime),
+        timeEnd: timeFromISO(t.endTime)
+      }))
+      .sort((a, b) => a.dayOfWeek - b.dayOfWeek);
+
+    selectedMemberPlanning.value = {
+      ...member,
       planningsByDay
     };
   } catch (err) {
@@ -512,12 +554,12 @@ const closePlanningPopup = () => {
 };
 
 // Helpers for time/date handling
+// ✅ Sonar: pas de catch "vide" -> on gère les dates invalides sans try/catch
 const timeFromISO = (iso) => {
   if (!iso) return '09:00';
-  try {
-    const d = new Date(iso);
-    return d.toISOString().substr(11,5);
-  } catch (e) { return '09:00'; }
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '09:00';
+  return d.toISOString().slice(11, 16);
 };
 
 const formatDateISO = (isoDate) => {
@@ -525,20 +567,18 @@ const formatDateISO = (isoDate) => {
   return d.toISOString().split('T')[0];
 };
 
+// ✅ Sonar: pas de catch "vide" -> fallback sur input si date invalide
 const formatDateForDisplay = (isoDate) => {
-  try {
-    const d = new Date(isoDate);
-    return new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(d);
-  } catch (e) {
-    return isoDate;
-  }
+  const d = new Date(isoDate);
+  if (Number.isNaN(d.getTime())) return isoDate;
+  return new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(d);
 };
 
 const savePlanningsChanges = async () => {
   if (!selectedMemberPlanning.value || !selectedMemberPlanning.value.planningsByDay) return;
   try {
     const updates = [];
-    
+
     // Update each template planning
     for (const dayPlan of selectedMemberPlanning.value.planningsByDay) {
       updates.push(
@@ -548,12 +588,12 @@ const savePlanningsChanges = async () => {
         })
       );
     }
-    
+
     if (updates.length === 0) {
       toast.warning('No planning templates to update.');
       return;
     }
-    
+
     await Promise.all(updates);
     toast.success(`Successfully updated ${updates.length} planning template(s)`);
     closePlanningPopup();
@@ -586,7 +626,11 @@ const saveMemberChanges = async () => {
     const currentUser = JSON.parse(localStorage.getItem('user')) || {};
     const currentRole = (currentUser.profile || '').toString().toLowerCase();
     const targetRole = (selectedMemberEdit.value.role || '').toString().toLowerCase();
-    if (currentRole === 'manager' && (targetRole === 'manager' || targetRole === 'admin') && selectedMemberEdit.value.id !== currentUser.id) {
+    if (
+      currentRole === 'manager' &&
+      (targetRole === 'manager' || targetRole === 'admin') &&
+      selectedMemberEdit.value.id !== currentUser.id
+    ) {
       toast.warning('You are not allowed to edit this user.');
       return;
     }
@@ -597,7 +641,12 @@ const saveMemberChanges = async () => {
     payload.firstname = (payload.firstname || '').trim();
     payload.lastname = (payload.lastname || '').trim();
     payload.email = (payload.email || '').trim();
-    if (payload.phone) payload.phone = parseInt(payload.phone);
+
+    // ✅ Sonar: Number.parseInt plutôt que parseInt
+    if (payload.phone !== undefined && payload.phone !== null && String(payload.phone).trim() !== '') {
+      payload.phone = Number.parseInt(String(payload.phone).trim(), 10);
+    }
+
     payload.profile = (payload.profile || 'employee').toString().toLowerCase();
 
     // Manager cannot promote someone to admin from the client-side
@@ -667,7 +716,7 @@ function getTeamInitials(teamName) {
 
 function getAvatarColor(name) {
   if (!name) return { from: '#6c757d', to: '#495057' };
-  
+
   const colors = [
     { from: '#1b93b1', to: '#2ca9bc' }, // Teal
     { from: '#e74c3c', to: '#c0392b' }, // Red
@@ -680,12 +729,16 @@ function getAvatarColor(name) {
     { from: '#ff9800', to: '#f57c00' }, // Amber
     { from: '#607d8b', to: '#455a64' }  // Blue Grey
   ];
-  
+
+  // ✅ Sonar: codePointAt plutôt que charCodeAt
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    const cp = name.codePointAt(i);
+    if (cp === undefined) continue;
+    hash = cp + ((hash << 5) - hash);
+    if (cp > 0xffff) i += 1; // sauter le surrogate pair
   }
-  
+
   const index = Math.abs(hash) % colors.length;
   return colors[index];
 }
@@ -937,4 +990,3 @@ onMounted(() => {
   padding: 1rem 1.25rem;
 }
 </style>
-
