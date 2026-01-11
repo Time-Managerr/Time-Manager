@@ -16,6 +16,9 @@ model Clocks {
   createdAt   DateTime  @default(now())
   clockOut    DateTime?
   hoursWorked Float?
+  late        Boolean   @default(false)
+  earlyLeave  Boolean   @default(false)
+  shortDay    Boolean   @default(false)
   Users       Users     @relation(fields: [userId], references: [idUser])
 
   @@index([userId], map: "Clocks_userId_fkey")
@@ -45,6 +48,25 @@ model Reports {
 
   @@index([teamId], map: "Reports_teamId_fkey")
   @@index([userId], map: "Reports_userId_fkey")
+}
+
+// KPIs: allow managers to define KPIs for lateness/hours/etc. Target can be a user or a team
+model Kpi {
+  id            Int      @id @default(autoincrement())
+  name          String
+  metric        String   // 'lateness' | 'hours' | 'custom'
+  scope         String   // 'user' | 'team'
+  targetUserId  Int?
+  targetTeamId  Int?
+  params        Json?    // optional JSON parameters (thresholds, aggregation rules)
+  createdBy     Int
+  createdAt     DateTime @default(now())
+
+  Users         Users    @relation(fields: [createdBy], references: [idUser])
+
+  @@index([createdBy], map: "Kpi_createdBy_fkey")
+  @@index([targetUserId], map: "Kpi_targetUserId_idx")
+  @@index([targetTeamId], map: "Kpi_targetTeamId_idx")
 }
 
 model Roles {
@@ -95,6 +117,8 @@ model Users {
   password  String
   phone     Int
   profile   String?
+  latenessCount Int     @default(0)
+  latenessMonth String?
   Clocks    Clocks[]
   Plannings Plannings[]
   Reports   Reports[]
@@ -102,6 +126,7 @@ model Users {
   Teams     Teams[]
   UserRoles UserRoles[]
   Vacations Vacations[]
+  Kpi       Kpi[]
 }
 
 model Vacations {

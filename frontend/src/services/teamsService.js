@@ -28,6 +28,8 @@ class Team {
     },
     members: team.TeamUser.map(tu => ({
       id: tu.Users.idUser,
+      firstname: tu.Users.firstname,
+      lastname: tu.Users.lastname,
       name: `${tu.Users.firstname} ${tu.Users.lastname}`,
       email: tu.Users.email,
       role: tu.Users.profile || 'Member',

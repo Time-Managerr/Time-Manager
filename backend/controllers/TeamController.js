@@ -3,12 +3,26 @@ import TeamsValidator from "../validators/TeamsValidator.js";
 
 const prisma = new PrismaClient();
 
+// Helper: check if requester manages the team
+async function isManagerOfTeam(teamId, userId) {
+  const team = await prisma.teams.findUnique({ where: { idTeam: parseInt(teamId) } });
+  return team && team.managerId === userId;
+}
+
 export default {
   // --- CRÉER UNE ÉQUIPE ---
   async createTeam(req, res) {
     try {
       // Extraction et validation des données via le validateur Zod
       const validatedData = TeamsValidator.parse(req.body);
+
+      const requesterId = req.user?.id;
+      const requesterProfile = req.user?.profile;
+
+      // If manager, ensure they are creating a team for themselves
+      if (requesterProfile === "manager" && validatedData.managerId !== requesterId) {
+        return res.status(403).json({ error: "Un manager ne peut créer qu'une équipe dont il est responsable." });
+      }
 
       // Vérifier si le nom existe déjà
       const existingTeam = await prisma.teams.findUnique({
@@ -51,13 +65,35 @@ export default {
   // --- LIRE TOUTES LES ÉQUIPES ---
   async getAllTeams(req, res) {
     try {
+      const requesterId = req.user?.id;
+      const requesterProfile = req.user?.profile;
+
+      if (requesterProfile === "admin") {
+        const teams = await prisma.teams.findMany({
+          include: { Users: true, _count: { select: { TeamUser: true } } }
+        });
+        return res.status(200).json(teams);
+      }
+
+      if (requesterProfile === "manager") {
+        const teams = await prisma.teams.findMany({
+          where: {
+            OR: [
+              { managerId: requesterId },
+              { TeamUser: { some: { userId: requesterId } } }
+            ]
+          },
+          include: { Users: true, _count: { select: { TeamUser: true } } }
+        });
+        return res.status(200).json(teams);
+      }
+
+      // Employee: only teams where they are member
       const teams = await prisma.teams.findMany({
-        include: {
-          Users: true, // Le manager
-          _count: { select: { TeamUser: true } } // Compte le nombre de membres
-        }
+        where: { TeamUser: { some: { userId: requesterId } } },
+        include: { Users: true, _count: { select: { TeamUser: true } } }
       });
-      res.status(200).json(teams);
+      return res.status(200).json(teams);
     } catch (error) {
       res.status(500).json({ error: "Erreur lors de la récupération des équipes." });
     }
@@ -82,7 +118,23 @@ export default {
       });
 
       if (!team) return res.status(404).json({ error: "Équipe introuvable." });
-      res.json(team);
+
+      const requesterId = req.user?.id;
+      const requesterProfile = req.user?.profile;
+
+      // Admin can see any team
+      if (requesterProfile === "admin") return res.json(team);
+
+      // Manager can see teams they manage or member of
+      if (requesterProfile === "manager") {
+        if (team.managerId === requesterId || team.TeamUser.some(tu => tu.userId === requesterId)) return res.json(team);
+        return res.status(403).json({ error: "Accès refusé." });
+      }
+
+      // Employee: only if member
+      if (team.TeamUser.some(tu => tu.userId === requesterId)) return res.json(team);
+
+      return res.status(403).json({ error: "Accès refusé." });
     } catch (error) {
       res.status(500).json({ error: "Erreur serveur." });
     }
@@ -147,6 +199,13 @@ export default {
       const { id } = req.params;
       const { members, ...otherData } = req.body;
 
+      const requesterId = req.user?.id;
+      const requesterProfile = req.user?.profile;
+
+      // Only admin or team manager can update
+      const allowed = (requesterProfile === "admin") || (await isManagerOfTeam(id, requesterId));
+      if (!allowed) return res.status(403).json({ error: "Accès refusé." });
+
       // Préparation des données de mise à jour
       const updatePayload = { ...otherData };
       if (otherData.managerId) updatePayload.managerId = parseInt(otherData.managerId);
@@ -180,6 +239,13 @@ export default {
   async deleteTeam(req, res) {
     try {
       const { id } = req.params;
+
+      const requesterId = req.user?.id;
+      const requesterProfile = req.user?.profile;
+
+      // Only admin or team manager can delete
+      const allowed = (requesterProfile === "admin") || (await isManagerOfTeam(id, requesterId));
+      if (!allowed) return res.status(403).json({ error: "Accès refusé." });
 
       // Note: Si vous n'avez pas de Cascade Delete configuré au niveau DB,
       // il faut d'abord supprimer les entrées dans TeamUser.

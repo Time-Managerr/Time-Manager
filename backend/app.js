@@ -6,6 +6,9 @@ import authRoutes from "./routes/Auth.js";
 import clocksRoutes from "./routes/Clocks.js";
 import planningRoutes from "./routes/Planning.js";
 import teamsRoutes from "./routes/Teams.js";
+import rolesRoutes from "./routes/Roles.js";
+import reportsRoutes from "./routes/Reports.js";
+import kpisRoutes from "./routes/Kpis.js";
 import { setupSwagger } from './config/swagger.js';
 
 dotenv.config();
@@ -22,12 +25,6 @@ const corsOptions = {
   preflightContinue: false,
   optionsSuccessStatus: 204,
 };
-      
-app.use((req, res, next) => {
-  console.log("Nouvelle requête :", req.method, req.url);
-  next();
-});
-
 
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -36,6 +33,9 @@ app.use("/auth", authRoutes);
 app.use("/clocks", clocksRoutes);
 app.use("/planning", planningRoutes);
 app.use("/teams", teamsRoutes);
+app.use("/roles", rolesRoutes);
+app.use("/reports", reportsRoutes);
+app.use("/kpis", kpisRoutes);
 
 app.listen(PORT || 3000, '0.0.0.0', () => {
   console.log(`API running on port ${PORT || 3000}`);

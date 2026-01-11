@@ -1,7 +1,14 @@
 <template>
   <main class="flex-fill p-4">
     <section class="dashboard">
-      <h2 class="fw-bold mb-4">Dashboard</h2>
+      <!-- PAGE TITLE -->
+      <div class="page-header mb-4">
+        <svg viewBox="0 0 24 24" class="page-icon" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        <h3 class="page-title mb-0">Dashboard</h3>
+      </div>
 
       <!-- TOP STATS -->
       <div class="d-flex gap-lg-5 mb-4">
@@ -50,7 +57,9 @@
                   :style="{ left: sliderInX + 'px' }"
                   @mousedown="startDrag('in', $event)"
                 >
-                  ▶
+                  <svg viewBox="0 0 24 24" class="slider-play-icon" fill="#fff" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
                 </div>
                 <span class="slider-text">Slide to Clock In</span>
               </div>
@@ -97,7 +106,9 @@
                   :style="{ left: sliderOutX + 'px' }"
                   @mousedown="startDrag('out', $event)"
                 >
-                  ■
+                  <svg viewBox="0 0 24 24" class="slider-stop-icon" fill="#fff" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="6" y="6" width="12" height="12" rx="1" />
+                  </svg>
                 </div>
                 <span class="slider-text">Slide to Clock Out</span>
               </div>
@@ -207,6 +218,30 @@ async function clockOut() {
 </script>
 
 <style scoped>
+/* PAGE HEADER STYLES - Consistent across all pages */
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.page-icon {
+  width: 32px;
+  height: 32px;
+  color: #1b93b1;
+  flex-shrink: 0;
+}
+
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1b93b1;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
 .dashboard {
   max-width: 1200px;
   margin: 0 auto;
@@ -248,6 +283,12 @@ async function clockOut() {
   align-items: center;
   justify-content: center;
   cursor: grab;
+}
+
+.slider-play-icon,
+.slider-stop-icon {
+  width: 28px;
+  height: 28px;
 }
 
 .handle-out {

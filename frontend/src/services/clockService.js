@@ -27,6 +27,11 @@ async clockOut(idClock, clockOut) {
     const response = await api.get("/clocks");
     return response.data;
   }
+
+  async deleteClock(id) {
+    const response = await api.delete(`/clocks/${id}`);
+    return response.data;
+  }
 }
 
 const clockInstance = new Clock();
